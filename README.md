@@ -46,6 +46,41 @@ with ZinqAgent(api_key="zak_your_key_here") as agent:
     agent.vibes.send(text="Hey! Your agent is alive.")
 ```
 
+## Build Sentinel in 10 Minutes
+
+**Sentinel** is the flagship example — a personal agent that monitors your Gmail and Slack, then sends you Zinq vibes when something important comes in.
+
+```python
+from zinq_agent import ZinqAgent
+from apscheduler.schedulers.blocking import BlockingScheduler
+import imaplib, os
+
+agent = ZinqAgent()  # reads ZINQ_API_KEY from env
+
+def check_email():
+    mail = imaplib.IMAP4_SSL("imap.gmail.com")
+    mail.login(os.environ["GMAIL_USER"], os.environ["GMAIL_APP_PASSWORD"])
+    mail.select("inbox")
+    _, msgs = mail.search(None, "UNSEEN")
+    count = len(msgs[0].split()) if msgs[0] else 0
+    if count > 0:
+        # Use Gemini to summarize
+        summary = agent.gemini.chat(messages=[
+            {"role": "user", "content": f"Summarize: {count} new emails"}
+        ])
+        agent.vibes.send(text=f"📬 {count} new emails\n{summary.text}")
+    mail.logout()
+
+scheduler = BlockingScheduler()
+scheduler.add_job(check_email, "interval", minutes=5)
+print("Sentinel is watching...")
+scheduler.start()
+```
+
+Deploy to GCloud free tier and it runs 24/7. Full Sentinel with Slack integration, importance scoring, and reply support: **[examples/sentinel/](examples/sentinel/)**
+
+---
+
 ## What Can Your Agent Do?
 
 ### Read the user's diary
