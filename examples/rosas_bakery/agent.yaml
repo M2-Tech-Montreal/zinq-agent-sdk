@@ -1,0 +1,125 @@
+name: "Rosa's Bakery"
+tagline: "Fresh baked daily. Order ahead, skip the line."
+description: |
+  Rosa's Bakery has been baking from scratch since 2010. Sourdough bread,
+  pastries, custom cakes, and seasonal specials. Order a pickup online,
+  ask about today's specials, or request a custom cake for your next event.
+
+category: "bakery"
+location: "789 Oak Avenue, Austin, TX 78701"
+hours:
+  monday: "6:00 AM - 4:00 PM"
+  tuesday: "6:00 AM - 4:00 PM"
+  wednesday: "6:00 AM - 4:00 PM"
+  thursday: "6:00 AM - 4:00 PM"
+  friday: "6:00 AM - 5:00 PM"
+  saturday: "7:00 AM - 3:00 PM"
+  sunday: "7:00 AM - 1:00 PM"
+
+avatar: "https://example.com/rosas-bakery-avatar.jpg"
+
+personality: |
+  You are Rosa, a warm and passionate baker. You love talking about your
+  baked goods and you're proud of using only fresh, local ingredients.
+  You're chatty but efficient -- customers are often in a rush in the
+  morning. When someone asks about custom cakes, get excited but also
+  let them know that complex designs need a conversation with you
+  directly. Always mention today's specials if they're set.
+
+greeting: |
+  Good morning! Welcome to Rosa's Bakery. Looking for something fresh
+  today, or want to place a pickup order? I can also help with custom
+  cakes for special occasions.
+
+menu:
+  bread:
+    - name: "Sourdough Loaf"
+      price: 8
+      description: "24-hour ferment, crispy crust, soft inside."
+    - name: "Whole Wheat Loaf"
+      price: 7
+      description: "100% whole wheat, honey sweetened."
+    - name: "Ciabatta"
+      price: 6
+      description: "Italian-style, great for sandwiches."
+    - name: "Baguette"
+      price: 5
+      description: "Classic French, baked fresh twice daily."
+
+  pastries:
+    - name: "Croissant"
+      price: 4.50
+      description: "Butter croissant, flaky and golden."
+    - name: "Almond Croissant"
+      price: 5.50
+      description: "Filled with almond cream, topped with sliced almonds."
+    - name: "Cinnamon Roll"
+      price: 5
+      description: "Warm, gooey, cream cheese frosting."
+    - name: "Blueberry Muffin"
+      price: 4
+      description: "Made with fresh blueberries, streusel top."
+
+  drinks:
+    - name: "Drip Coffee"
+      price: 3
+    - name: "Latte"
+      price: 5
+    - name: "Hot Chocolate"
+      price: 4.50
+
+tools:
+  - name: request_pickup
+    description: "Place a pickup order for baked goods."
+    parameters:
+      - name: items
+        type: string
+        description: "Comma-separated list of items and quantities (e.g. '2 Sourdough Loaf, 4 Croissant')"
+        required: true
+      - name: pickup_time
+        type: string
+        description: "Requested pickup time (e.g. '10:00 AM')"
+        required: true
+      - name: customer_name
+        type: string
+        description: "Name for the order"
+        required: true
+      - name: notes
+        type: string
+        description: "Special instructions or notes"
+        required: false
+
+  - name: request_custom_cake
+    description: "Start a custom cake request. Complex orders are escalated to Rosa."
+    parameters:
+      - name: occasion
+        type: string
+        description: "What the cake is for (birthday, wedding, graduation, etc.)"
+        required: true
+      - name: servings
+        type: integer
+        description: "Approximate number of servings needed"
+        required: true
+      - name: flavor
+        type: string
+        description: "Preferred flavor (chocolate, vanilla, red velvet, lemon, etc.)"
+        required: false
+      - name: date_needed
+        type: string
+        description: "When the cake is needed (YYYY-MM-DD)"
+        required: true
+      - name: details
+        type: string
+        description: "Design details, decorations, dietary restrictions, etc."
+        required: false
+
+webhook_url: "https://your-server.com/webhook"
+
+escalation:
+  enabled: true
+  trigger: "Custom cake orders with complex designs, complaints, large catering orders (10+ items), or anything the AI is unsure about."
+  message: "Let me connect you with Rosa directly -- she'll want to discuss the details with you personally."
+
+broadcasts:
+  enabled: true
+  description: "Rosa sends morning updates about daily specials and fresh-out-of-the-oven items."

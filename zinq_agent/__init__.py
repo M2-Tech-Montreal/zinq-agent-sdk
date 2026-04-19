@@ -72,7 +72,7 @@ from .models import (
     WebhookUser,
     Zone,
 )
-from .webhook import ZinqWebhook
+from .webhook import ZinqBusinessWebhook, ZinqWebhook
 
 __version__ = "0.1.0"
 
@@ -80,6 +80,7 @@ __all__ = [
     # Main classes
     "ZinqAgent",
     "AsyncZinqAgent",
+    "ZinqBusinessWebhook",
     "ZinqMarketplaceAdmin",
     "ZinqWebhook",
     # Models

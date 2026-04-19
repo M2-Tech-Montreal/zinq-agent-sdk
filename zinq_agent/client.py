@@ -711,6 +711,63 @@ class FeedClient:
         return [Vibe.model_validate(v) for v in response.json().get("vibes", [])]
 
 
+class BillingClient:
+    """Client for checking credits, usage, and costs.
+
+    Usage::
+
+        credits = agent.billing.credits()
+        print(f"Remaining: {credits['remaining']} credits")
+
+        usage = agent.billing.usage()
+        print(f"This month: {usage['total_tokens']} tokens, {usage['total_cost_usd']}")
+    """
+
+    def __init__(self, http_client: httpx.Client) -> None:
+        self._client = http_client
+
+    def credits(self) -> dict:
+        """Get current credit balance.
+
+        Returns:
+            Dict with: remaining, used_this_month, total_purchased,
+            reset_date, tier.
+        """
+        response = self._client.get("/billing/credits")
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return response.json()
+
+    def usage(self, *, period: str = "month") -> dict:
+        """Get usage breakdown.
+
+        Args:
+            period: "day", "week", "month" (default "month").
+
+        Returns:
+            Dict with: total_tokens, total_calls, total_cost_usd,
+            gemini_chat_calls, gemini_embed_calls, breakdown_by_day.
+        """
+        response = self._client.get("/billing/usage", params={"period": period})
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return response.json()
+
+    def cost_estimate(self, tokens: int) -> dict:
+        """Estimate cost for a given token count.
+
+        Args:
+            tokens: Number of tokens to estimate cost for.
+
+        Returns:
+            Dict with: estimated_credits, estimated_cost_usd.
+        """
+        response = self._client.get("/billing/estimate", params={"tokens": tokens})
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return response.json()
+
+
 class UserClient:
     """Client for reading user context (profile and preferences).
 
@@ -1004,6 +1061,7 @@ class ZinqAgent:
         self.contacts = ContactsClient(self._client)
         self.zones = ZonesClient(self._client)
         self.memories = MemoryClient(self._client)
+        self.billing = BillingClient(self._client)
         self.user = UserClient(self._client)
         self.gemini = GeminiClient(self._client)
 

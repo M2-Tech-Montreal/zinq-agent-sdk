@@ -479,6 +479,66 @@ class MarketplaceDataClient:
         return response.json()
 
 
+class MarketplaceBillingClient:
+    """Client for checking marketplace agent earnings and costs.
+
+    Usage::
+
+        earnings = admin.billing.earnings()
+        print(f"Total earned: ${earnings['total_earned_usd']}")
+        print(f"This month: ${earnings['this_month_usd']}")
+
+        usage = admin.billing.usage()
+        print(f"Active users: {usage['active_users']}")
+        print(f"Gemini cost: ${usage['gemini_cost_usd']}")
+    """
+
+    def __init__(self, http_client: httpx.Client) -> None:
+        self._client = http_client
+
+    def earnings(self) -> dict:
+        """Get earnings summary.
+
+        Returns:
+            Dict with: total_earned_usd, this_month_usd, pending_payout_usd,
+            last_payout_date, next_payout_date, currency.
+        """
+        response = self._client.get("/billing/earnings")
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return response.json()
+
+    def usage(self, *, period: str = "month") -> dict:
+        """Get usage and cost breakdown.
+
+        Args:
+            period: "day", "week", "month" (default "month").
+
+        Returns:
+            Dict with: active_users, total_conversations, gemini_calls,
+            gemini_tokens, gemini_cost_usd, revenue_usd, net_earnings_usd,
+            breakdown_by_day.
+        """
+        response = self._client.get("/billing/usage", params={"period": period})
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return response.json()
+
+    def payouts(self, *, limit: int = 10) -> list[dict]:
+        """Get payout history.
+
+        Args:
+            limit: Max results (default 10).
+
+        Returns:
+            List of payout records with: amount_usd, date, status, method.
+        """
+        response = self._client.get("/billing/payouts", params={"limit": limit})
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return response.json().get("payouts", [])
+
+
 class MarketplaceTestClient:
     """Test your agent without a real user.
 
@@ -585,6 +645,7 @@ class ZinqMarketplaceAdmin:
         self.conversations = MarketplaceConversationsClient(self._client)
         self.reviews = MarketplaceReviewsClient(self._client)
         self.data = MarketplaceDataClient(self._client)
+        self.billing = MarketplaceBillingClient(self._client)
         self.test = MarketplaceTestClient(self._client)
 
     def broadcast(self, text: str, *, options: dict | None = None) -> dict:

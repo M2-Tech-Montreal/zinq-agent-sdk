@@ -282,3 +282,167 @@ class ZinqWebhook:
             return '{"status": "ok"}', 200, {"Content-Type": "application/json"}
 
         return app
+
+
+class ZinqBusinessWebhook(ZinqWebhook):
+    """Webhook server for marketplace business agents.
+
+    Extends ``ZinqWebhook`` with business-specific event handling:
+    action dispatching for tool calls (e.g. ``check_availability``,
+    ``book_appointment``), and built-in support for the
+    ``ZinqMarketplaceAdmin`` client.
+
+    The key difference from ``ZinqWebhook`` is the ``action`` decorator,
+    which maps tool-call action names from your YAML agent definition to
+    Python handler functions. When Gemini invokes a tool on behalf of the
+    user, Zinq sends a ``vibe.reply`` event with the action name and
+    parameters -- this class routes it to the correct handler.
+
+    Usage::
+
+        from zinq_agent import ZinqMarketplaceAdmin
+        from zinq_agent.webhook import ZinqBusinessWebhook
+
+        admin = ZinqMarketplaceAdmin()
+        webhook = ZinqBusinessWebhook(secret="zws_xxxxx", admin=admin)
+
+        @webhook.action("check_availability")
+        def check_availability(params, session_id):
+            date = params.get("date")
+            return {"available": True, "slots": ["9:00 AM", "10:00 AM"]}
+
+        @webhook.action("book_appointment")
+        def book_appointment(params, session_id):
+            # ... save to your calendar
+            return {"confirmed": True, "time": params["time"]}
+
+        webhook.start(port=8080)
+
+    Args:
+        secret: Webhook secret (``zws_`` prefix) for signature verification.
+        admin: Optional ``ZinqMarketplaceAdmin`` instance for replying to
+               conversations and managing data from within handlers.
+        skip_signature_check: If True, skip signature verification (local dev).
+    """
+
+    def __init__(
+        self,
+        secret: str,
+        *,
+        admin: Any = None,
+        skip_signature_check: bool = False,
+    ) -> None:
+        super().__init__(secret, skip_signature_check=skip_signature_check)
+        self.admin = admin
+        self._actions: dict[str, Callable[..., Any]] = {}
+
+    def action(self, action_name: str) -> Callable:
+        """Register a handler for a tool-call action from the YAML definition.
+
+        When the AI invokes a tool defined in your ``agent.yaml``, Zinq
+        sends a webhook event with the action name and extracted parameters.
+        This decorator routes that event to your handler function.
+
+        The handler receives two arguments:
+        - ``params``: dict of extracted parameters from the user's message
+        - ``session_id``: the user's session identifier
+
+        The handler should return a dict that will be sent back to the AI
+        as the tool result, which the AI then uses to compose its reply.
+
+        Usage::
+
+            @webhook.action("check_availability")
+            def check_availability(params, session_id):
+                date = params.get("date")
+                slots = calendar.get_open_slots(date)
+                return {"available": bool(slots), "slots": slots}
+        """
+
+        def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+            self._actions[action_name] = func
+            return func
+
+        return decorator
+
+    def _dispatch(self, event: WebhookEvent) -> None:
+        """Dispatch event, checking for action calls first."""
+        # Check if this is a vibe.reply with a button_value that maps to an action
+        if event.event == "vibe.reply" and hasattr(event.data, "button_value"):
+            button_value = event.data.button_value or ""  # type: ignore[union-attr]
+            if button_value.startswith("action:"):
+                self._dispatch_action(event, button_value)
+                return
+
+        # Check if this is a vibe.received with action metadata
+        if event.event == "vibe.received":
+            raw_text = ""
+            if hasattr(event.data, "text"):
+                raw_text = event.data.text or ""  # type: ignore[union-attr]
+            if raw_text.startswith("__action__:"):
+                self._dispatch_action_from_text(event, raw_text)
+                return
+
+        # Fall through to standard handlers
+        super()._dispatch(event)
+
+    def _dispatch_action(self, event: WebhookEvent, button_value: str) -> None:
+        """Dispatch a button-based action call."""
+        import json as _json
+
+        parts = button_value.split(":", 2)
+        action_name = parts[1] if len(parts) > 1 else ""
+        params_str = parts[2] if len(parts) > 2 else "{}"
+
+        try:
+            params = _json.loads(params_str)
+        except _json.JSONDecodeError:
+            params = {}
+
+        session_id = str(event.user.id)
+        handler = self._actions.get(action_name)
+
+        if handler is not None:
+            try:
+                result = handler(params, session_id)
+                if result is not None and self.admin is not None:
+                    self.admin.conversations.reply(
+                        session_id, _json.dumps(result)
+                    )
+            except Exception:
+                logger.exception(
+                    "Error in action handler '%s'", action_name
+                )
+        else:
+            logger.warning("No handler registered for action '%s'", action_name)
+
+    def _dispatch_action_from_text(self, event: WebhookEvent, raw_text: str) -> None:
+        """Dispatch an action encoded in text (tool call from Gemini)."""
+        import json as _json
+
+        # Format: __action__:action_name:{"param": "value"}
+        parts = raw_text.split(":", 2)
+        action_name = parts[1] if len(parts) > 1 else ""
+        params_str = parts[2] if len(parts) > 2 else "{}"
+
+        try:
+            params = _json.loads(params_str)
+        except _json.JSONDecodeError:
+            params = {}
+
+        session_id = str(event.user.id)
+        handler = self._actions.get(action_name)
+
+        if handler is not None:
+            try:
+                result = handler(params, session_id)
+                if result is not None and self.admin is not None:
+                    self.admin.conversations.reply(
+                        session_id, _json.dumps(result)
+                    )
+            except Exception:
+                logger.exception(
+                    "Error in action handler '%s'", action_name
+                )
+        else:
+            logger.warning("No handler registered for action '%s'", action_name)

@@ -1,0 +1,112 @@
+name: "Joe's Barber Shop"
+tagline: "Classic cuts, clean fades, always on time."
+description: |
+  Joe's Barber Shop has been serving the neighborhood since 2015.
+  Book a haircut, check availability, or browse our service menu --
+  all through chat. No phone calls, no waiting on hold.
+
+category: "barber_shop"
+location: "456 Main Street, Brooklyn, NY 11201"
+hours:
+  monday: "9:00 AM - 7:00 PM"
+  tuesday: "9:00 AM - 7:00 PM"
+  wednesday: "9:00 AM - 7:00 PM"
+  thursday: "9:00 AM - 8:00 PM"
+  friday: "9:00 AM - 8:00 PM"
+  saturday: "8:00 AM - 6:00 PM"
+  sunday: closed
+
+avatar: "https://example.com/joes-barber-avatar.jpg"
+
+personality: |
+  You are Joe, a friendly barber who keeps things simple and professional.
+  You speak casually but respectfully. You know your craft and take pride
+  in your work. Keep responses short and to the point -- barbers don't
+  ramble. When someone asks about styles, give honest advice.
+
+greeting: |
+  Hey! Welcome to Joe's Barber Shop. Looking to book a cut,
+  or just browsing the menu? Let me know how I can help.
+
+services:
+  - name: "Classic Haircut"
+    price: 30
+    duration_minutes: 30
+    description: "Scissors or clippers, styled and finished."
+
+  - name: "Fade"
+    price: 35
+    duration_minutes: 30
+    description: "Skin fade, mid fade, or taper -- your call."
+
+  - name: "Beard Trim"
+    price: 15
+    duration_minutes: 15
+    description: "Shape up, line up, hot towel finish."
+
+  - name: "Haircut + Beard"
+    price: 40
+    duration_minutes: 45
+    description: "The full package. Haircut and beard trim together."
+
+  - name: "Kids Cut (under 12)"
+    price: 20
+    duration_minutes: 20
+    description: "Patient cuts for the little ones."
+
+  - name: "Head Shave"
+    price: 25
+    duration_minutes: 20
+    description: "Hot lather straight razor shave."
+
+tools:
+  - name: check_availability
+    description: "Check available appointment slots for a given date."
+    parameters:
+      - name: date
+        type: string
+        description: "Date to check (YYYY-MM-DD format)"
+        required: true
+      - name: service
+        type: string
+        description: "Service name (e.g. 'Classic Haircut', 'Fade')"
+        required: false
+
+  - name: book_appointment
+    description: "Book an appointment for the customer."
+    parameters:
+      - name: date
+        type: string
+        description: "Appointment date (YYYY-MM-DD)"
+        required: true
+      - name: time
+        type: string
+        description: "Appointment time (e.g. '10:00 AM')"
+        required: true
+      - name: service
+        type: string
+        description: "Service name"
+        required: true
+      - name: customer_name
+        type: string
+        description: "Customer's name"
+        required: true
+
+  - name: cancel_appointment
+    description: "Cancel an existing appointment."
+    parameters:
+      - name: appointment_id
+        type: string
+        description: "The appointment ID to cancel"
+        required: true
+      - name: reason
+        type: string
+        description: "Reason for cancellation"
+        required: false
+
+webhook_url: "https://your-server.com/webhook"
+
+escalation:
+  enabled: true
+  trigger: "When the customer has a complaint, wants a refund, or asks to speak to the owner."
+  message: "Let me get Joe on the line for you. He'll follow up shortly."
