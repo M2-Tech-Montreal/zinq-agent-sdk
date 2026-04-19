@@ -6,12 +6,15 @@ Complete reference for every class, method, and model in the Zinq Agent Python S
 
 - [ZinqAgent](#zinqagent)
 - [AsyncZinqAgent](#asynczinqagent)
-- [agent.diary](#agentdiary)
-- [agent.vibes](#agentvibes)
-- [agent.memories](#agentmemories)
-- [agent.user](#agentuser)
-- [agent.gemini](#agentgemini)
-- [ZinqWebhook](#zinqwebhook)
+- [agent.diary](#agentdiary) — read, search, save, star, archive diary entries
+- [agent.vibes](#agentvibes) — send vibes, read received vibes
+- [agent.feed](#agentfeed) — read the user's vibe feed
+- [agent.contacts](#agentcontacts) — list, search, get user's connections
+- [agent.zones](#agentzones) — list zones/clubs, get zone vibes, create clubs, invite
+- [agent.memories](#agentmemories) — persistent key-value storage
+- [agent.user](#agentuser) — user profile and preferences
+- [agent.gemini](#agentgemini) — LLM chat and embeddings
+- [ZinqWebhook](#zinqwebhook) — receive events from Zinq
 - [Models](#models)
 - [Exceptions](#exceptions)
 
@@ -175,6 +178,173 @@ print(f"Credits used: {results.embedding_credits_used}")
 | `end` | `str \| None` | `None` | ISO date string for latest entry. |
 
 **Returns:** [`SearchResults`](#searchresults)
+
+### `agent.diary.save(text, *, mood_score=None)`
+
+Save a new entry to the user's diary.
+
+```python
+agent.diary.save("Had a great meditation session today", mood_score=8)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `text` | `str` | (required) | The diary entry text. |
+| `mood_score` | `int \| None` | `None` | Optional mood score 1-10. |
+
+**Returns:** `dict` with `vibe_id` of the created entry.
+
+### `agent.diary.star(vibe_id, *, rating=1)`
+
+Star/save a vibe to the diary.
+
+```python
+agent.diary.star(vibe_id=4127)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `vibe_id` | `int` | (required) | The vibe to star. |
+| `rating` | `int` | `1` | Star rating. |
+
+**Returns:** `dict` confirmation.
+
+### `agent.diary.archive(vibe_id)`
+
+Archive a vibe (soft delete from diary).
+
+```python
+agent.diary.archive(vibe_id=4127)
+```
+
+**Returns:** `dict` confirmation.
+
+---
+
+## agent.feed
+
+Read the user's vibe feed — vibes from their connections.
+
+```python
+vibes = agent.feed.list(limit=10)
+for v in vibes:
+    print(f"{v.user_name}: {v.text or v.transcript_summary}")
+```
+
+### `agent.feed.list(*, limit=20, offset=0)`
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `limit` | `int` | `20` | Max results per page. |
+| `offset` | `int` | `0` | Pagination offset. |
+
+**Returns:** `list[`[`Vibe`](#vibe)`]`
+
+---
+
+## agent.contacts
+
+Read the user's connections. Requires the `contacts` data access permission.
+
+```python
+contacts = agent.contacts.list()
+for c in contacts:
+    print(f"{c.name} — {c.presence_status}")
+
+# Search by name
+results = agent.contacts.search("Glenn")
+```
+
+### `agent.contacts.list(*, limit=50, offset=0)`
+
+List the user's connections.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `limit` | `int` | `50` | Max results (max 200). |
+| `offset` | `int` | `0` | Pagination offset. |
+
+**Returns:** `list[`[`Contact`](#contact)`]`
+
+### `agent.contacts.search(query, *, limit=10)`
+
+Search contacts by name (case-insensitive partial match).
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `query` | `str` | (required) | Name to search for. |
+| `limit` | `int` | `10` | Max results. |
+
+**Returns:** `list[`[`Contact`](#contact)`]`
+
+### `agent.contacts.get(contact_id)`
+
+Get a single contact by ID.
+
+**Returns:** [`Contact`](#contact)
+
+---
+
+## agent.zones
+
+Read and manage the user's zones (life zones and clubs).
+
+```python
+# List all zones
+zones = agent.zones.list()
+for z in zones:
+    print(f"{z.name} ({z.zone_type}) — {z.member_count} members")
+
+# Get vibes from a club
+vibes = agent.zones.vibes(zone_id=42, limit=20)
+
+# Create a club
+new_club = agent.zones.create("Book Club", description="Monthly reads")
+
+# Invite members
+agent.zones.invite(zone_id=new_club.id, user_ids=[1130, 1129])
+```
+
+### `agent.zones.list()`
+
+List all of the user's zones (life zones + clubs).
+
+**Returns:** `list[`[`Zone`](#zone)`]`
+
+### `agent.zones.vibes(zone_id, *, limit=20, offset=0)`
+
+Get vibes from a specific zone or club.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `zone_id` | `int` | (required) | The zone/club ID. |
+| `limit` | `int` | `20` | Max results. |
+| `offset` | `int` | `0` | Pagination offset. |
+
+**Returns:** `list[`[`Vibe`](#vibe)`]`
+
+### `agent.zones.create(name, *, zone_type="club", description=None)`
+
+Create a new zone or club.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `name` | `str` | (required) | Display name. |
+| `zone_type` | `str` | `"club"` | `"life"`, `"club"`, or `"event"`. |
+| `description` | `str \| None` | `None` | Optional description. |
+
+**Returns:** [`Zone`](#zone)
+
+### `agent.zones.invite(zone_id, user_ids)`
+
+Invite users to a club/zone.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `zone_id` | `int` | (required) | The club/zone ID. |
+| `user_ids` | `list[int]` | (required) | User IDs to invite. |
+
+**Returns:** `dict` confirmation.
 
 ---
 
@@ -688,6 +858,37 @@ User profile and preferences.
 | `country_code` | `str \| None` | ISO country code (e.g., `"US"`) |
 | `agent_preferences` | `AgentPreferences \| None` | Agent interaction preferences |
 | `credit_status` | `CreditStatus` | Credit balance and tier |
+
+### Contact
+
+A user's connection.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `int` | Connection ID |
+| `name` | `str` | Display name |
+| `nickname` | `str \| None` | Nickname |
+| `avatar_url` | `str \| None` | Avatar image URL |
+| `zone_name` | `str \| None` | Zone this connection belongs to |
+| `zone_type` | `str \| None` | `"life"`, `"club"`, `"event"` |
+| `connection_type` | `str \| None` | How connected (`"nfc_tap"`, `"tap_link"`, etc.) |
+| `last_active` | `datetime \| None` | Last activity timestamp |
+| `presence_status` | `str \| None` | `"online"`, `"away"`, `"grey"` |
+| `is_system` | `bool` | Whether this is a system/agent connection |
+
+### Zone
+
+A user's zone (life zone or club).
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `int` | Zone ID |
+| `name` | `str` | Display name |
+| `zone_type` | `str` | `"life"`, `"club"`, or `"event"` |
+| `member_count` | `int` | Number of active members |
+| `is_owner` | `bool` | Whether the user owns this zone |
+| `description` | `str \| None` | Zone description |
+| `avatar_url` | `str \| None` | Zone avatar URL |
 
 ### AgentPreferences
 
