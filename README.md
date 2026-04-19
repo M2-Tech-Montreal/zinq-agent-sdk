@@ -11,6 +11,12 @@
 
 **Zinq Agent SDK** lets you build personal AI agents in Python that connect to the [Zinq](https://zinq-app.com) platform. Your agent gets its own chat thread, can read the user's diary, send messages (vibes), remember preferences, and use Google Gemini for AI-powered responses — all through a clean, async-ready Python API.
 
+### What is Zinq?
+
+[Zinq](https://zinq-app.com) is a social app where every interaction happens through **vibes** — short voice, video, photo, or text messages. Think WhatsApp meets a personal diary, with AI agents built in. Users connect with people and businesses, keep a private diary, and chat with AI agents that understand their context.
+
+Your agent lives inside this ecosystem. It has its own profile, avatar, and chat thread — just like a real contact. Users interact with your agent the same way they interact with friends: by sending vibes.
+
 ### Why Zinq Agents?
 
 - **Full desktop power** — Your agent runs on your machine. Screen control, file access, browser automation, shell commands — anything Python can do.
