@@ -1,15 +1,32 @@
-# Zinq Agent Python SDK
+# Zinq Agent SDK for Python
+
+### Build AI agents that do real work — monitor email, automate Slack, run a personal shopping assistant, book appointments — all in Python.
 
 <!-- TODO: Add logo/banner image here -->
 <!-- ![Zinq Agent SDK](https://zinq-app.com/assets/sdk-banner.png) -->
 
-**Build personal AI agents that live inside the Zinq app.**
-
-Your agent gets its own chat thread in the user's Zinq app. It can read their diary, send them vibes, remember things about them, and optionally use Gemini for AI-powered responses -- all through a clean Python API.
-
 [![PyPI version](https://img.shields.io/pypi/v/zinq-agent)](https://pypi.org/project/zinq-agent/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+**Zinq Agent SDK** lets you build personal AI agents in Python that connect to the [Zinq](https://zinq-app.com) platform. Your agent gets its own chat thread, can read the user's diary, send messages (vibes), remember preferences, and use Google Gemini for AI-powered responses — all through a clean, async-ready Python API.
+
+### Why Zinq Agents?
+
+- **Full desktop power** — Your agent runs on your machine. Screen control, file access, browser automation, shell commands — anything Python can do.
+- **Connected to a social network** — Unlike isolated desktop AI assistants, Zinq agents are connected to users through vibes, memories, and a built-in marketplace.
+- **Gemini built-in** — Call Google Gemini through our API, or bring your own LLM (OpenAI, Claude, local Llama).
+- **Deploy anywhere** — Your laptop, GCloud free tier, AWS, Docker, Railway. No vendor lock-in.
+- **Open source** — MIT licensed. Build what you want.
+
+### What people are building
+
+- **Email monitors** — Get AI-summarized email digests in your pocket
+- **Slack bridges** — Important mentions forwarded as mobile notifications
+- **Personal shoppers** — AI-powered product recommendations for small businesses
+- **Appointment bookers** — Automated scheduling for barbers, restaurants, clinics
+- **Fitness coaches** — Personalized workout plans using diary data
+- **Daily digest agents** — Morning briefings from multiple data sources
 
 ---
 
@@ -285,3 +302,32 @@ Contributions are welcome! Please open an issue first to discuss what you'd like
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+## Use Cases
+
+The Zinq Agent SDK is perfect for building:
+
+| Use Case | Description | Example |
+|----------|-------------|---------|
+| **Email AI Assistant** | Monitor Gmail/Outlook, summarize, auto-reply | [Sentinel](examples/sentinel/) |
+| **Slack Bot** | Bridge Slack mentions to mobile, summarize channels | [examples/](docs/examples.md) |
+| **Personal Shopper** | AI product recommendations for online stores | [personal_shopper.py](examples/personal_shopper.py) |
+| **Appointment Scheduler** | Automated booking for service businesses | [appointment_bot.py](examples/appointment_bot.py) |
+| **Fitness Coach** | Personalized workouts using diary data + Gemini | [examples](docs/examples.md) |
+| **Daily Digest** | Morning briefing from email, calendar, news | [examples](docs/examples.md) |
+| **Customer Support** | AI-first support with human handoff | [docs](docs/webhooks.md) |
+| **IoT Monitor** | Smart home alerts via Zinq vibes | Build your own! |
+
+## Keywords
+
+`ai-agent` `python-sdk` `personal-ai-assistant` `chatbot-framework` `gemini-api` `llm-agent` `conversational-ai` `email-automation` `slack-integration` `ai-shopping-assistant` `appointment-booking` `webhook-server` `agent-framework` `autonomous-agent` `ai-coach`
+
+## Star History
+
+If this project helps you build something cool, give it a star! It helps others discover it.
+
+## License
+
+MIT — do whatever you want with it.
