@@ -252,6 +252,67 @@ print(response["reply"])
 
 Full reference: **[docs/business-agents.md](docs/business-agents.md)**
 
+---
+
+## Build. Publish. Get Paid.
+
+Turn your business into an AI agent on the Zinq marketplace.
+
+```
+Describe your business  -->  AI generates your agent  -->  Publish to marketplace  -->  Customers find you on Zinq
+```
+
+No website needed. No app to build. No Shopify subscription. Just an AI agent that talks to your customers.
+
+### Marketplace examples
+
+Complete, runnable examples showing real business agents:
+
+| Example | What It Does | Key Features |
+|---------|-------------|--------------|
+| **[Joe's Barber Shop](examples/joes_barber/)** | Customers book haircuts through chat | Appointment booking, availability checking, service menu, cancellation |
+| **[Rosa's Bakery](examples/rosas_bakery/)** | Daily specials, pickup orders, custom cakes | Morning broadcasts, order management, human handoff for custom requests |
+| **[Dr. Sarah Nutrition](examples/dr_sarah_nutrition/)** | Nutrition consultations and meal plans | Professional booking, AI-powered advice, intake forms, safety guardrails |
+
+Each example includes a YAML agent definition, a working webhook server, and sample conversations.
+
+### What businesses are building on Zinq
+
+| Industry | Use Case |
+|----------|----------|
+| Barber shops, salons, spas | Appointment booking and reminders |
+| Bakeries, restaurants, cafes | Ordering, daily specials, reservations |
+| Nutritionists, therapists, coaches | Consultations, intake forms, follow-ups |
+| Plumbers, electricians, cleaners | Service quotes and scheduling |
+| Fashion designers, artists | Personal shopping and commissions |
+| Tutors, music teachers | Lesson scheduling and progress tracking |
+
+### How it works
+
+1. **Define your agent** -- Write a YAML file describing your business, services, and personality (or let Gemini generate it from a description)
+2. **Build your webhook** -- Handle tool calls (book appointments, take orders, answer questions) with `ZinqBusinessWebhook`
+3. **Deploy** -- `admin.agent.deploy(open("agent.yaml").read())`
+4. **Go live** -- Your agent appears in the Zinq marketplace. Customers enable it and start chatting.
+
+```python
+from zinq_agent import ZinqMarketplaceAdmin
+from zinq_agent.webhook import ZinqBusinessWebhook
+
+admin = ZinqMarketplaceAdmin()
+webhook = ZinqBusinessWebhook(secret="zws_xxx", admin=admin)
+
+@webhook.action("book_appointment")
+def book(params, session_id):
+    # Your booking logic here
+    return {"confirmed": True, "time": params["time"]}
+
+# Deploy and start
+admin.agent.deploy(open("agent.yaml").read())
+webhook.start(port=8080)
+```
+
+---
+
 ## Environment Variables
 
 The SDK reads these automatically so you don't have to pass them in code:
@@ -318,11 +379,21 @@ except ZinqError as e:
 
 See the [`examples/`](examples/) directory:
 
+### Personal agents
+
 | Example | Description | Requires Webhooks? |
 |---------|-------------|-------------------|
 | [`echo_bot.py`](examples/echo_bot.py) | Echoes back everything the user says | Yes |
 | [`appointment_bot.py`](examples/appointment_bot.py) | Polling-based appointment scheduler | No |
 | [`personal_shopper.py`](examples/personal_shopper.py) | Uses Gemini + memories for personalized recommendations | Yes |
+
+### Marketplace business agents
+
+| Example | Description | Key Features |
+|---------|-------------|-------------|
+| [`joes_barber/`](examples/joes_barber/) | Barber shop appointment booking | Service menu, availability, cancellation |
+| [`rosas_bakery/`](examples/rosas_bakery/) | Bakery ordering and daily specials | Pickup orders, broadcasts, custom cake handoff |
+| [`dr_sarah_nutrition/`](examples/dr_sarah_nutrition/) | Nutrition consultations and meal plans | Booking, intake forms, AI advice, safety guardrails |
 
 ## Documentation
 

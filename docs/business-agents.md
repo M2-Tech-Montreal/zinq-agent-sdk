@@ -1,8 +1,191 @@
-# Marketplace Agent Admin
+# Business Agents & Marketplace
 
-The `ZinqMarketplaceAdmin` client lets marketplace agent owners manage their agent programmatically: deploy YAML definitions, view users, reply to conversations, send broadcasts, and manage data collections.
+Build an AI agent for your business. Publish it to the Zinq marketplace. Customers find you and start chatting.
 
-## Setup
+```
+Describe your business  -->  AI generates your agent  -->  Publish to marketplace  -->  Customers find you on Zinq
+```
+
+No website needed. No app to build. No Shopify subscription. Just an AI agent that talks to your customers.
+
+## Complete Examples
+
+Three working examples you can clone and customize:
+
+| Example | Business Type | Key Features |
+|---------|--------------|--------------|
+| **[Joe's Barber Shop](../examples/joes_barber/)** | Barber shop | Appointment booking, availability checking, service menu, cancellation |
+| **[Rosa's Bakery](../examples/rosas_bakery/)** | Bakery | Pickup orders, daily specials broadcasts, custom cake requests, human handoff |
+| **[Dr. Sarah Nutrition](../examples/dr_sarah_nutrition/)** | Nutrition practice | Consultation booking, meal plan intake, AI-powered advice, safety guardrails |
+
+Each example includes:
+- `agent.yaml` -- Full agent definition (personality, services, tools)
+- `server.py` -- Working webhook server with `ZinqBusinessWebhook`
+- `README.md` -- Setup guide with sample conversations
+
+## Architecture Overview
+
+A marketplace business agent has three parts:
+
+1. **YAML definition** (`agent.yaml`) -- Describes your business to the AI: personality, services, menu, tools, escalation rules. Gemini reads this to generate responses.
+
+2. **Webhook server** (`server.py`) -- Handles tool calls from the AI. When a customer says "book me a haircut at 10am", Gemini extracts the parameters and calls your `book_appointment` webhook. You run the logic and return the result.
+
+3. **Admin client** (`ZinqMarketplaceAdmin`) -- Deploy your agent, manage data collections (menus, products), send broadcasts, reply to escalated conversations, view analytics.
+
+```
+Customer on Zinq app
+        |
+        v
+   Zinq Platform (Gemini AI)
+        |
+        |-- reads agent.yaml for personality and tools
+        |-- extracts parameters from user messages
+        |
+        v
+   Your Webhook Server (ZinqBusinessWebhook)
+        |
+        |-- @webhook.action("book_appointment")
+        |-- @webhook.action("check_availability")
+        |
+        v
+   Your Business Logic (database, calendar, etc.)
+```
+
+## Quick Start
+
+### 1. Install
+
+```bash
+pip install zinq-agent[webhook]
+```
+
+### 2. Write your agent definition
+
+```yaml
+# agent.yaml
+name: "My Business"
+tagline: "What you do, in one line."
+description: "Longer description of your business."
+category: "your_category"
+
+personality: |
+  You are friendly and professional. Keep responses concise.
+
+greeting: |
+  Welcome! How can I help you today?
+
+services:
+  - name: "Basic Service"
+    price: 50
+    duration_minutes: 30
+
+tools:
+  - name: book_service
+    description: "Book a service for the customer."
+    parameters:
+      - name: service
+        type: string
+        required: true
+      - name: date
+        type: string
+        required: true
+      - name: customer_name
+        type: string
+        required: true
+
+webhook_url: "https://your-server.com/webhook"
+```
+
+### 3. Build your webhook server
+
+```python
+# server.py
+import os
+from zinq_agent import ZinqMarketplaceAdmin
+from zinq_agent.webhook import ZinqBusinessWebhook
+
+admin = ZinqMarketplaceAdmin()
+webhook = ZinqBusinessWebhook(
+    secret=os.environ["ZINQ_WEBHOOK_SECRET"],
+    admin=admin,
+)
+
+@webhook.action("book_service")
+def book_service(params, session_id):
+    # Your booking logic here
+    return {
+        "confirmed": True,
+        "service": params["service"],
+        "date": params["date"],
+        "message": f"Booked {params['service']} for {params['date']}!",
+    }
+
+@webhook.on("agent.wave")
+def greet(event):
+    admin.conversations.reply(
+        str(event.user.id),
+        "Welcome! What can I help you with?",
+    )
+
+if __name__ == "__main__":
+    admin.agent.deploy(open("agent.yaml").read())
+    webhook.start(port=8080)
+```
+
+### 4. Deploy and go live
+
+```bash
+export ZINQ_BIZ_KEY="zbk_your_key_here"
+export ZINQ_WEBHOOK_SECRET="zws_your_secret_here"
+
+python server.py
+```
+
+## ZinqBusinessWebhook
+
+`ZinqBusinessWebhook` extends `ZinqWebhook` with action routing for tool calls. When Gemini invokes a tool defined in your YAML, Zinq sends a webhook event with the action name and parameters. `ZinqBusinessWebhook` routes it to the correct handler.
+
+### Action handlers
+
+```python
+from zinq_agent.webhook import ZinqBusinessWebhook
+
+webhook = ZinqBusinessWebhook(secret="zws_xxx", admin=admin)
+
+@webhook.action("check_availability")
+def check_availability(params, session_id):
+    """
+    params: dict of extracted parameters from the user's message
+    session_id: the user's session identifier
+    returns: dict that the AI uses to compose its response
+    """
+    date = params.get("date")
+    slots = get_open_slots(date)
+    return {"available": bool(slots), "slots": slots}
+
+@webhook.action("book_appointment")
+def book_appointment(params, session_id):
+    save_to_calendar(params["date"], params["time"], params["name"])
+    return {"confirmed": True, "time": params["time"]}
+```
+
+### Standard event handlers
+
+`ZinqBusinessWebhook` inherits all event handlers from `ZinqWebhook`:
+
+```python
+@webhook.on("agent.wave")       # User opens your agent chat
+@webhook.on("vibe.received")    # User sends a message
+@webhook.on("vibe.reply")       # User taps a button or replies
+@webhook.on("charm.received")   # User sends an emoji reaction
+```
+
+## ZinqMarketplaceAdmin
+
+The admin client for managing your marketplace agent programmatically.
+
+### Setup
 
 ```python
 from zinq_agent import ZinqMarketplaceAdmin
@@ -18,7 +201,7 @@ with ZinqMarketplaceAdmin() as admin:
     print(admin.agent.status())
 ```
 
-## Agent Lifecycle (`admin.agent`)
+### Agent Lifecycle (`admin.agent`)
 
 Deploy, update, and manage your agent's marketplace listing.
 
@@ -42,7 +225,7 @@ admin.agent.enable()
 admin.agent.disable()
 ```
 
-### Status Values
+#### Status Values
 
 | Status | Meaning |
 |--------|---------|
@@ -51,7 +234,7 @@ admin.agent.disable()
 | `active` | Live in the marketplace, users can enable it |
 | `disabled` | Removed from marketplace, existing users keep access |
 
-## Users (`admin.users`)
+### Users (`admin.users`)
 
 View pseudonymous information about users who have enabled your agent. For privacy, you see name initials and avatars only -- never full profiles.
 
@@ -70,7 +253,7 @@ profile = admin.users.profile("sess_abc123")
 # {"nameInitial": "J", "avatarUrl": "...", "enabledAt": "...", "lastActiveAt": "..."}
 ```
 
-## Conversations (`admin.conversations`)
+### Conversations (`admin.conversations`)
 
 View and manage conversations between your agent and its users. Useful for human-in-the-loop workflows where the AI hands off to a human operator.
 
@@ -95,7 +278,7 @@ admin.conversations.reply("sess_abc123", "Thanks for your patience! Here's what 
 admin.conversations.resume_ai("sess_abc123")
 ```
 
-### Conversation Status Values
+#### Conversation Status Values
 
 | Status | Meaning |
 |--------|---------|
@@ -103,7 +286,7 @@ admin.conversations.resume_ai("sess_abc123")
 | `awaiting_human` | AI escalated, waiting for human reply |
 | `completed` | Conversation ended |
 
-## Reviews (`admin.reviews`)
+### Reviews (`admin.reviews`)
 
 View user reviews and aggregate rating statistics.
 
@@ -126,7 +309,7 @@ stats = admin.reviews.stats()
 print(f"Average: {stats['avg_rating']:.1f}/5 ({stats['total_count']} reviews)")
 ```
 
-## Data Collections (`admin.data`)
+### Data Collections (`admin.data`)
 
 Manage structured data that powers your agent (product catalogs, FAQ entries, appointment slots, etc.). Collections are created automatically when you add the first record.
 
@@ -161,7 +344,7 @@ admin.data.delete("products", "rec_abc123")
 admin.data.clear("products")
 ```
 
-## Broadcasting (`admin.broadcast`)
+### Broadcasting (`admin.broadcast`)
 
 Send a vibe to all users who have enabled your agent.
 
@@ -176,7 +359,9 @@ admin.broadcast(
 )
 ```
 
-## Testing (`admin.test`)
+See [Rosa's Bakery morning_update.py](../examples/rosas_bakery/morning_update.py) for a complete broadcasting example.
+
+### Testing (`admin.test`)
 
 Simulate user conversations to test your agent before going live.
 
@@ -220,3 +405,14 @@ export ZINQ_BIZ_KEY=zbk_your_key_here
 ```python
 admin = ZinqMarketplaceAdmin()  # reads from env
 ```
+
+## What businesses are building
+
+| Industry | Use Case | Example |
+|----------|----------|---------|
+| Barber shops, salons, spas | Appointment booking and reminders | [Joe's Barber](../examples/joes_barber/) |
+| Bakeries, restaurants, cafes | Ordering, daily specials, reservations | [Rosa's Bakery](../examples/rosas_bakery/) |
+| Nutritionists, therapists, coaches | Consultations, intake forms, follow-ups | [Dr. Sarah](../examples/dr_sarah_nutrition/) |
+| Plumbers, electricians, cleaners | Service quotes and scheduling | Adapt Joe's Barber |
+| Fashion designers, artists | Personal shopping and commissions | Adapt Dr. Sarah |
+| Tutors, music teachers | Lesson scheduling and progress tracking | Adapt Joe's Barber |
