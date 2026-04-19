@@ -6,20 +6,78 @@ You have a bakery agent serving 50 real customers. You want to change the prompt
 
 ## The Solution: Agent Versions + Visibility Controls
 
-### Two Agents, One Business
+### Two Agent IDs, One Business
+
+Every marketplace agent gets TWO IDs — a prod ID and a dev ID. Same business, same developer, but completely isolated:
+
+```
+Agent ID 42 — "Rosa's Bakery" (prod)
+├── Visibility: public
+├── Users: 230 installs
+├── Reviews: 47 reviews, 4.3 avg
+├── YAML: v3 (stable, tested)
+└── Conversations: 1,200 total
+
+Agent ID 43 — "Rosa's Bakery Dev" (dev)
+├── Visibility: private (or testers: [1129, 1130])
+├── Users: 3 testers
+├── Reviews: 0
+├── YAML: v7 (experimental, might be broken)
+└── Conversations: 50 test conversations
+```
+
+**The dev agent is disposable.** Break it, reset it, try crazy things. The prod agent's reviews, users, and history are completely untouched.
 
 ```python
 from zinq_agent import ZinqMarketplaceAdmin
 
-admin = ZinqMarketplaceAdmin()
+# Prod admin — handles the live agent
+admin_prod = ZinqMarketplaceAdmin(api_key="zbk_prod_xxxxx")
 
-# Create the production agent (public — visible to everyone)
+# Dev admin — handles the test agent
+admin_dev = ZinqMarketplaceAdmin(api_key="zbk_dev_xxxxx")
+
+# Work on dev freely
+admin_dev.agent.update(experimental_yaml)
+admin_dev.test.chat("Does this new feature work?")  # safe to break
+
+# When ready, promote to prod
+dev_yaml = admin_dev.agent.definition()
+admin_prod.agent.update(dev_yaml)  # prod gets the tested YAML
+# Reviews (47), users (230), history — all preserved on agent ID 42
+```
+
+### Why Two IDs Instead of One?
+
+| | One ID (visibility toggle) | Two IDs (dev + prod) |
+|---|---|---|
+| **Safety** | Risky — testing on live agent | Safe — dev is isolated |
+| **Reviews** | Preserved | Preserved (on prod ID) |
+| **Rollback** | Must roll back on live | Just don't promote |
+| **Testers** | See the same agent as real users | See a separate agent |
+| **Data** | Shared (specials, menu) | Separate (test data won't affect prod) |
+
+**Recommended: Two IDs.** Use one ID with visibility toggle only for quick hotfixes (set prod to private → fix → flip back to public, like a maintenance window).
+
+### Setting Up Dev + Prod
+
+```python
+# Step 1: Create both agents
 prod = admin.agent.create(name="Rosa's Bakery", visibility="public")
-print(f"Prod agent ID: {prod['agentId']}")  # agent_id: 42
+dev = admin.agent.create(name="Rosa's Bakery Dev", visibility="private")
 
-# Create the dev agent (private — visible only to specific users)
-dev = admin.agent.create(name="Rosa's Bakery (Dev)", visibility="private")
-print(f"Dev agent ID: {dev['agentId']}")  # agent_id: 43
+# Step 2: Store both API keys
+# ZINQ_BIZ_KEY_PROD=zbk_prod_xxxxx
+# ZINQ_BIZ_KEY_DEV=zbk_dev_xxxxx
+
+# Step 3: Use dev for all development
+admin_dev = ZinqMarketplaceAdmin(api_key=os.environ["ZINQ_BIZ_KEY_DEV"])
+admin_dev.agent.update(yaml)
+admin_dev.test.chat("test test test")
+
+# Step 4: Promote to prod when ready
+admin_prod = ZinqMarketplaceAdmin(api_key=os.environ["ZINQ_BIZ_KEY_PROD"])
+admin_prod.agent.update(admin_dev.agent.definition())
 ```
 
 ### Visibility Modes
