@@ -310,6 +310,76 @@ Full platform docs: [docs.zinq-app.com](https://docs.zinq-app.com)
 - [`pydantic`](https://docs.pydantic.dev/) -- Data validation
 - [`flask`](https://flask.palletsprojects.com/) -- Webhook server (optional)
 
+## Build a Crypto Trading Agent in 10 Minutes
+
+Monitor your Binance portfolio from your phone. Get alerts when coins move 5%+.
+
+```bash
+pip install zinq-agent ccxt apscheduler
+export ZINQ_API_KEY=zak_your_key
+export BINANCE_API_KEY=your_binance_key
+export BINANCE_SECRET=your_binance_secret
+```
+
+```python
+from zinq_agent import ZinqAgent
+from apscheduler.schedulers.blocking import BlockingScheduler
+import ccxt, os
+
+agent = ZinqAgent()
+exchange = ccxt.binance({
+    "apiKey": os.environ["BINANCE_API_KEY"],
+    "secret": os.environ["BINANCE_SECRET"],
+})
+
+last_prices = {}
+
+def check_prices():
+    balance = exchange.fetch_balance()
+    alerts = []
+    for coin, amount in balance["total"].items():
+        if amount > 0 and coin not in ("USDT", "USD"):
+            try:
+                ticker = exchange.fetch_ticker(f"{coin}/USDT")
+                price = ticker["last"]
+                if coin in last_prices:
+                    change = (price - last_prices[coin]) / last_prices[coin]
+                    if abs(change) >= 0.05:
+                        emoji = "🚀" if change > 0 else "📉"
+                        alerts.append(f"{emoji} {coin} {change:+.1%}: ${price:,.2f}")
+                last_prices[coin] = price
+            except Exception:
+                pass
+    if alerts:
+        agent.vibes.send(text="Price alerts:\n" + "\n".join(alerts))
+
+def hourly_summary():
+    balance = exchange.fetch_balance()
+    total = balance["total"].get("USDT", 0)
+    lines = []
+    for coin, amount in balance["total"].items():
+        if amount > 0 and coin not in ("USDT", "USD"):
+            try:
+                price = exchange.fetch_ticker(f"{coin}/USDT")["last"]
+                value = amount * price
+                total += value
+                lines.append(f"  {coin}: ${value:,.2f}")
+            except Exception:
+                pass
+    agent.vibes.send(text=f"📊 Portfolio: ${total:,.2f}\n" + "\n".join(lines[:8]))
+
+scheduler = BlockingScheduler()
+scheduler.add_job(check_prices, "interval", minutes=5)
+scheduler.add_job(hourly_summary, "cron", minute=0)
+hourly_summary()
+print("Trading agent watching your portfolio...")
+scheduler.start()
+```
+
+Deploy to GCloud free tier → portfolio alerts on your phone 24/7. Full version with natural language queries ("BTC price?", "how's my portfolio?") and Gemini-powered analysis: **[examples/trading_bot.py](examples/trading_bot.py)**
+
+---
+
 ## Contributing
 
 Contributions are welcome! Please open an issue first to discuss what you'd like to change.
