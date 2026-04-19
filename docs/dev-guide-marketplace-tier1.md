@@ -697,3 +697,250 @@ admin.data.add("daily_specials", {"name": "Croissants", "price": 3.50})
 ### What About Custom Logic? (Tier 2)
 
 If you need tools that do more than read/write data — like checking a real calendar, processing a payment, or calling an external API — that's [Tier 2 (Connected Agents)](dev-guide-marketplace-tier2.md). Your server handles the custom logic via webhooks, while Zinq still runs the AI conversation.
+
+---
+
+## The Iteration Loop: Generate → Validate → Review → Refine → Test → Publish
+
+Getting a marketplace agent right is NOT a one-shot process. The YAML won't be perfect on the first try. That's expected. The SDK gives you four AI-powered tools to iterate quickly:
+
+```
+describe business
+     ↓
+generate() ─── first attempt (probably 70% right)
+     ↓
+validate() ─── catches structural errors (too many tools, bad types, etc.)
+     ↓ errors? → refine() with error context → validate again
+     ↓
+review() ──── AI quality check (generic prompt? missing tools? bad tone?)
+     ↓ issues? → refine() with feedback → review again
+     ↓
+test.chat() ── try real conversations
+     ↓ not happy? → refine() with "make it more casual" → test again
+     ↓
+publish() ─── submit for marketplace review
+```
+
+### Step 1: Generate
+
+```python
+result = admin.agent.generate(
+    "I run Rosa's Bakery. Fresh bread, pastries, custom cakes. "
+    "Daily specials change every morning. Pickup orders. "
+    "Custom cakes need my personal attention."
+)
+yaml_str = result['yaml']
+```
+
+Gemini generates a complete YAML definition — prompt, tools, collections, greeting messages. It's a solid first attempt, but rarely perfect.
+
+### Step 2: Validate
+
+Structural validation — catches errors that would prevent the agent from running:
+
+```python
+validation = admin.agent.validate(yaml_str)
+
+if not validation['valid']:
+    print("Errors:")
+    for error in validation['errors']:
+        print(f"  ❌ {error}")
+    # e.g., "prompt exceeds 8K chars"
+    # e.g., "tool type 'http_call' is not allowed"
+    # e.g., "more than 10 tools defined"
+
+if validation['warnings']:
+    print("Warnings:")
+    for warning in validation['warnings']:
+        print(f"  ⚠️ {warning}")
+    # e.g., "no request_human_review tool — customers can't reach you"
+    # e.g., "no first_contact_message defined"
+```
+
+**If errors exist, auto-fix them:**
+
+```python
+if not validation['valid']:
+    # Pass errors back to Gemini — it fixes its own mistakes
+    fixed = admin.agent.refine(yaml_str, feedback=f"Fix these errors: {validation['errors']}")
+    yaml_str = fixed['yaml']
+    
+    # Validate again
+    validation = admin.agent.validate(yaml_str)
+    assert validation['valid'], f"Still broken: {validation['errors']}"
+```
+
+### Step 3: Review
+
+AI quality review — Gemini evaluates its own work for quality, completeness, and tone:
+
+```python
+review = admin.agent.review(yaml_str)
+
+print(f"Quality score: {review['score']}/10")
+
+if review['issues']:
+    print("Issues:")
+    for issue in review['issues']:
+        print(f"  🔍 {issue}")
+    # e.g., "prompt is too generic — doesn't mention specific products"
+    # e.g., "missing hours of operation"
+    # e.g., "tone is too formal for a bakery"
+
+if review['suggestions']:
+    print("Suggestions:")
+    for suggestion in review['suggestions']:
+        print(f"  💡 {suggestion}")
+    # e.g., "add a FAQ collection for common questions"
+    # e.g., "include a seasonal specials tool"
+```
+
+### Step 4: Refine
+
+Tell Gemini what to fix — in plain English. It takes the existing YAML and applies your changes:
+
+```python
+# Fix quality issues
+improved = admin.agent.refine(yaml_str, feedback="Make it more casual and friendly. Add delivery option. Mention we're open Mon-Sat 7am-6pm.")
+yaml_str = improved['yaml']
+
+# Or fix specific things
+improved = admin.agent.refine(yaml_str, feedback="The greeting is too long. Make it one sentence.")
+yaml_str = improved['yaml']
+
+# Or completely change direction
+improved = admin.agent.refine(yaml_str, feedback="Actually we also do catering for events. Add that as a service.")
+yaml_str = improved['yaml']
+```
+
+**Refine preserves everything else.** If you say "add delivery", it doesn't rewrite the whole prompt — it adds delivery to the existing YAML and adjusts the tools/prompt accordingly.
+
+### Step 5: Test
+
+Chat with your agent to see how it behaves:
+
+```python
+# Deploy current YAML for testing
+admin.agent.update(yaml_str)
+
+# Test common scenarios
+response = admin.test.chat("What do you have today?")
+print(f"Agent: {response['reply']}")
+
+response = admin.test.chat("Do you deliver?")
+print(f"Agent: {response['reply']}")
+
+response = admin.test.chat("I want a custom wedding cake")
+print(f"Agent: {response['reply']}")
+# Should escalate to human (request_human_review)
+
+# Check if escalation worked
+convos = admin.conversations.list(status="awaiting_human")
+print(f"Escalated conversations: {len(convos)}")
+
+# Reset for next test round
+admin.test.reset()
+```
+
+**Not happy? Go back to Step 4:**
+
+```python
+# The agent was too pushy about upselling
+improved = admin.agent.refine(yaml_str, feedback="Stop trying to upsell. Just answer what the customer asks.")
+yaml_str = improved['yaml']
+admin.agent.update(yaml_str)
+
+# Test again
+response = admin.test.chat("Just a sourdough please")
+print(f"Agent: {response['reply']}")
+# Better!
+```
+
+### Step 6: Publish
+
+When you're happy with the agent:
+
+```python
+# Final validation
+validation = admin.agent.validate(yaml_str)
+assert validation['valid']
+
+# Final review
+review = admin.agent.review(yaml_str)
+assert review['score'] >= 7, f"Quality too low: {review['score']}/10"
+
+# Upload avatar
+admin.agent.upload_avatar("rosa_avatar.png")
+
+# Publish
+result = admin.agent.publish()
+print(f"Status: {result['status']}")  # "pending_review"
+print(f"Estimated review: {result['estimated_review_time']}")
+```
+
+### The Complete Script
+
+Here's a realistic session — notice how many iterations it takes:
+
+```python
+from zinq_agent import ZinqMarketplaceAdmin
+
+admin = ZinqMarketplaceAdmin()
+
+# Attempt 1: Generate
+result = admin.agent.generate("I run a small pizza restaurant. Dine-in and delivery. Open 11am-10pm.")
+yaml = result['yaml']
+
+# Validate — probably fine structurally
+v = admin.agent.validate(yaml)
+print(f"Valid: {v['valid']}")  # True
+
+# Review — probably has suggestions
+r = admin.agent.review(yaml)
+print(f"Score: {r['score']}/10")  # Maybe 6/10
+print(f"Issues: {r['issues']}")  # "no menu collection", "prompt is generic"
+
+# Refine based on review
+yaml = admin.agent.refine(yaml, feedback=f"Fix: {r['issues']}. Our specialties are Margherita, Pepperoni, and a weekly special.")['yaml']
+
+# Test
+admin.agent.update(yaml)
+print(admin.test.chat("What's good here?")['reply'])
+# "Our specialties are Margherita and Pepperoni! We also have a weekly special — ask me what it is today!"
+
+# Not bad, but let's refine the personality
+yaml = admin.agent.refine(yaml, feedback="Be more like a friendly Italian uncle. Use some Italian words.")['yaml']
+admin.agent.update(yaml)
+
+print(admin.test.chat("What's good here?")['reply'])
+# "Eh, you come to the right place! Our Margherita is bellissima — fresh mozzarella, San Marzano tomatoes..."
+# Perfect!
+
+# Add menu data
+admin.data.add("menu", {"name": "Margherita", "price": 14, "description": "Classic with fresh mozz"})
+admin.data.add("menu", {"name": "Pepperoni", "price": 16, "description": "Loaded with pepperoni"})
+
+# Test with data
+print(admin.test.chat("How much is a pepperoni?")['reply'])
+# "Pepperoni is $16 — loaded with pepperoni, you're gonna love it!"
+
+# Final check
+admin.test.reset()
+r = admin.agent.review(yaml)
+print(f"Final score: {r['score']}/10")  # 9/10
+
+# Publish
+admin.agent.upload_avatar("pizza_logo.png")
+admin.agent.publish()
+# Done!
+```
+
+### How Many Iterations Does It Take?
+
+| Business Type | Typical Iterations | Why |
+|--------------|-------------------|-----|
+| Simple (bakery, barber) | 2-3 | Tools are straightforward |
+| Medium (restaurant, clinic) | 3-5 | Menu/services data, personality tuning |
+| Complex (financial advisor, legal) | 5-8 | Safety guardrails, compliance language |
+
+Most of the iteration is on the **personality and tone** — the tools and structure are usually right after 1-2 rounds. The AI review catches obvious quality issues, but the "feel" of the agent requires human judgment via `test.chat()`.
