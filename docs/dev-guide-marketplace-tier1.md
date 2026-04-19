@@ -597,3 +597,103 @@ result = admin.agent.generate("New description with more detail...")
 admin.agent.update(result['yaml'])
 admin.test.reset()  # Clear test conversation
 ```
+
+---
+
+## How Tools Work (No Code Required)
+
+The most important thing to understand: **tools are NOT code.** They're data operations declared in YAML. You never write tool logic for a Tier 1 agent.
+
+### The Tool Execution Chain
+
+```
+1. YAML declares the tool
+   ↓
+2. Gemini sees it as a callable function
+   ↓
+3. Customer asks a question → Gemini decides to call the tool
+   ↓
+4. MarketplaceToolExecutor routes by tool type
+   ↓
+5. Executor performs the database operation
+   ↓
+6. Result returned to Gemini → Gemini formulates response
+```
+
+### Concrete Example: "What are your specials?"
+
+**Step 1 — Your YAML declares:**
+```yaml
+tools:
+  - name: get_specials
+    type: query_log              # tells executor: "read from database"
+    collection: daily_specials   # tells executor: "this collection"
+    description: "Get today's specials"
+```
+
+**Step 2 — You upload data via SDK:**
+```python
+admin.data.add("daily_specials", {"name": "Sourdough Loaf", "price": 6.50})
+admin.data.add("daily_specials", {"name": "Blueberry Muffins", "price": 8.00})
+admin.data.add("daily_specials", {"name": "Croissants", "price": 3.50})
+```
+
+**Step 3 — Customer sends a vibe:** "Hey, what's fresh today?"
+
+**Step 4 — Gemini thinks:** "The user wants to know about specials. I have a `get_specials` tool. Let me call it."
+
+**Step 5 — Zinq's executor runs:**
+```sql
+SELECT data FROM marketplace_agent_data 
+WHERE agent_type = 'rosas_bakery' 
+  AND collection = 'daily_specials'
+```
+
+**Step 6 — Returns to Gemini:**
+```json
+[
+  {"name": "Sourdough Loaf", "price": 6.50},
+  {"name": "Blueberry Muffins", "price": 8.00},
+  {"name": "Croissants", "price": 3.50}
+]
+```
+
+**Step 7 — Gemini responds to customer:**
+"Today's specials: Sourdough Loaf ($6.50), Blueberry Muffins ($8.00), and Croissants ($3.50)! Want to order anything?"
+
+### Tool Types — What Each One Does
+
+| Tool Type | What the Executor Does | Example Use |
+|-----------|----------------------|-------------|
+| `query_log` | Reads records from a collection | "What's on the menu?", "Show me your services" |
+| `structured_log` | Saves a record to a collection | "Log this order", "Save appointment" |
+| `aggregate_log` | Counts/sums records | "How many orders today?", "Total revenue" |
+| `diary_search` | Searches user's Zinq diary | "What workouts did I do last week?" |
+| `save_memory` | Saves a user preference | "Remember I'm allergic to nuts" |
+| `get_memories` | Reads saved preferences | "What are my dietary restrictions?" |
+| `ask_user` | Shows interactive buttons | "Pick a size: [Small] [Medium] [Large]" |
+| `schedule_follow_up` | Schedules a check-in vibe | "I'll check back tomorrow at 9am" |
+| `request_human_review` | Pauses AI, notifies business owner | "Let me check with the team..." |
+
+### You Control the Data, Gemini Controls the Conversation
+
+Think of it like a restaurant:
+- **You** stock the kitchen (upload data via SDK)
+- **Gemini** is the waiter (talks to customers, takes orders)
+- **The executor** is the kitchen (fetches what the waiter asks for)
+
+You never write waiter logic. You just keep the kitchen stocked:
+
+```python
+# Every morning Rosa updates specials
+admin.data.clear("daily_specials")
+admin.data.add("daily_specials", {"name": "Sourdough Loaf", "price": 6.50})
+admin.data.add("daily_specials", {"name": "Croissants", "price": 3.50})
+
+# The agent automatically knows about the new specials
+# No code changes, no YAML changes, no redeployment
+```
+
+### What About Custom Logic? (Tier 2)
+
+If you need tools that do more than read/write data — like checking a real calendar, processing a payment, or calling an external API — that's [Tier 2 (Connected Agents)](dev-guide-marketplace-tier2.md). Your server handles the custom logic via webhooks, while Zinq still runs the AI conversation.
