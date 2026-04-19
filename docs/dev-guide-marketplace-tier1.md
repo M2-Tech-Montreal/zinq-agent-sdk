@@ -459,3 +459,141 @@ admin.data.update("menu_items", record_id, {"price": 9.00})
 - Ready for webhook integrations? See [Marketplace Tier 2](dev-guide-marketplace-tier2.md).
 - [Business Agents reference](business-agents.md) -- full `ZinqMarketplaceAdmin` documentation.
 - [Examples](../examples/) -- complete working marketplace agents (Joe's Barber, Rosa's Bakery, Dr. Sarah Nutrition).
+
+---
+
+## How Agent Generation Works
+
+When you call `admin.agent.generate()`, here's what happens under the hood:
+
+```
+You (SDK)                    Zinq Backend                    Gemini AI
+   |                              |                              |
+   |-- generate("I run a         |                              |
+   |   bakery with daily          |                              |
+   |   specials...")           -->|                              |
+   |                              |-- meta-prompt + your      -->|
+   |                              |   description                |
+   |                              |                              |
+   |                              |<-- complete YAML definition--|
+   |                              |   (prompt, tools, collections|
+   |                              |    first contact message)    |
+   |                              |                              |
+   |<-- {yaml, summary} ---------|                              |
+   |                                                             |
+   |   You review the YAML...                                    |
+   |   Edit if needed...                                         |
+   |                                                             |
+   |-- update(edited_yaml) ----->|  (saves new version)         |
+   |                              |                              |
+   |-- test.chat("What are    -->|-- runs YAML agent loop    -->|
+   |   your specials?")           |                              |
+   |                              |<-- "Today we have..."    ---|
+   |<-- {reply: "Today we...} ---|                              |
+   |                                                             |
+   |   Iterate until happy...                                    |
+   |                                                             |
+   |-- publish() --------------->|  (submits for review)        |
+```
+
+### The Development Loop
+
+This is the real workflow — it's NOT one-shot:
+
+```python
+from zinq_agent import ZinqMarketplaceAdmin
+
+admin = ZinqMarketplaceAdmin()
+
+# Step 1: Generate initial YAML from your description
+result = admin.agent.generate(
+    "I run Rosa's Bakery. We sell fresh bread, pastries, and custom cakes. "
+    "We have daily specials that change every morning. "
+    "Customers can order for pickup. Custom cakes need my personal attention."
+)
+
+# Step 2: Review what Gemini created
+print(result['summary']['name'])         # "Rosa's Bakery"
+print(result['summary']['capabilities']) # ["Show specials", "Browse menu", ...]
+print(result['summary']['collections'])  # ["daily_specials", "menu_items"]
+
+# Step 3: Look at the raw YAML
+yaml_str = result['yaml']
+print(yaml_str)  # Full YAML definition
+
+# Step 4: Save it locally, edit in your favorite editor
+with open("agent.yaml", "w") as f:
+    f.write(yaml_str)
+
+# ... edit agent.yaml in VS Code, vim, whatever ...
+# Maybe tweak the personality, add a tool, change the bio
+
+# Step 5: Upload your edited version
+with open("agent.yaml") as f:
+    admin.agent.update(f.read())
+
+# Step 6: Test it
+response = admin.test.chat("What are your specials today?")
+print(response['reply'])
+# Hmm, it says "I don't have any specials loaded yet" — need to add data
+
+# Step 7: Add some test data
+admin.data.add("daily_specials", {"name": "Sourdough Loaf", "price": 6.50})
+admin.data.add("daily_specials", {"name": "Blueberry Muffins", "price": 8.00})
+
+# Step 8: Test again
+response = admin.test.chat("What are your specials today?")
+print(response['reply'])
+# "Today's specials: Sourdough Loaf ($6.50), Blueberry Muffins ($8.00)!"
+# 
+
+# Step 9: Test edge cases
+admin.test.chat("I want to order for pickup")
+admin.test.chat("Can you make a custom wedding cake?")
+admin.test.chat("What time do you close?")  # Does it handle this gracefully?
+
+# Step 10: Upload avatar
+admin.agent.upload_avatar("rosa_avatar.png")
+
+# Step 11: When you're happy, publish
+admin.agent.publish()
+# {"status": "pending_review", "estimated_review_time": "24-48 hours"}
+
+# Step 12: Monitor after launch
+admin.users.count()           # How many people enabled your agent
+admin.reviews.stats()         # Average rating
+admin.billing.earnings()      # How much you've earned
+```
+
+### Common Iteration Patterns
+
+**"The agent is too formal"**
+```python
+# Read the current YAML
+yaml_str = admin.agent.definition()
+# Edit the system_prompt to be more casual
+# Re-upload and test
+```
+
+**"It doesn't know about my hours"**
+```python
+# Add to your YAML's system_prompt:
+# "Our hours are Mon-Sat 7am-6pm, closed Sundays."
+# Or add an FAQ collection:
+admin.data.add("faq", {"question": "What are your hours?", "answer": "Mon-Sat 7am-6pm"})
+```
+
+**"The tool isn't working right"**
+```python
+# Test the specific tool
+response = admin.test.chat("I want to order for pickup")
+# Check the tool call details
+print(response.get('tool_calls'))  # See what tools were invoked
+```
+
+**"I want to start over"**
+```python
+result = admin.agent.generate("New description with more detail...")
+admin.agent.update(result['yaml'])
+admin.test.reset()  # Clear test conversation
+```
