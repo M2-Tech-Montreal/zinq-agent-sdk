@@ -8,14 +8,9 @@ Build your first Zinq agent in under 5 minutes.
 - **A Zinq account** -- download [Zinq](https://zinq-app.com) and sign up
 - **An agent API key** -- you'll create this in the next step
 
-## Step 1: Create Your Agent in Zinq
+## Step 1: Create Your Agent
 
-1. Open the Zinq app on your phone
-2. Go to **My Agents** (in the settings or agent tab)
-3. Tap **Create Agent**
-4. Give your agent a name (e.g., "My First Bot") and a short description
-5. Zinq will generate an **API key** that starts with `zak_`
-6. Copy the API key -- you'll need it in a moment
+Create your agent in the Zinq app: go to **My Agents** and tap **Create Agent**. You get an API key (`zak_...`) -- save it.
 
 > Your API key looks like this: `zak_a1b2c3d4e5f6...` (64 characters after the prefix).
 > Keep it secret. Anyone with this key can act as your agent.

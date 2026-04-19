@@ -21,7 +21,7 @@ A complete marketplace agent example for a barber shop. Customers book haircuts,
 
 - Python 3.10+
 - A Zinq business account (get one at [zinq-app.com/business](https://zinq-app.com/business))
-- Your `ZINQ_BIZ_KEY` and `ZINQ_WEBHOOK_SECRET` from the dashboard
+- Your `ZINQ_BIZ_KEY` and `ZINQ_WEBHOOK_SECRET` (set as environment variables)
 
 ## Setup
 
@@ -61,7 +61,8 @@ python server.py
 # Using ngrok
 ngrok http 8080
 
-# Then update your webhook URL in the Zinq dashboard
+# Then register your webhook URL via the SDK:
+# admin.agent.set_webhook("https://abc123.ngrok-free.app/webhook")
 ```
 
 ## Local development

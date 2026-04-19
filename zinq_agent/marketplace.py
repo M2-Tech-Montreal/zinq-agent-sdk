@@ -153,6 +153,76 @@ class AgentLifecycleClient:
             _raise_for_status(response)
         return response.json()
 
+    def generate(self, description: str, *, name: str | None = None) -> dict:
+        """Generate agent YAML from a business description using AI.
+
+        Send a natural language description of your business and get back
+        a complete YAML agent definition that you can review, edit, and deploy.
+
+        Args:
+            description: Natural language description of the business
+                         (e.g., "I run a bakery with daily specials and pickup orders").
+            name: Optional business name. Auto-extracted from description if not provided.
+
+        Returns:
+            Dict with: yaml (str), summary (dict with capabilities, collections).
+        """
+        body: dict[str, Any] = {"description": description}
+        if name is not None:
+            body["businessName"] = name
+        response = self._client.post("/agent/generate", json=body)
+        if not response.is_success:
+            _raise_for_status(response)
+        return response.json()
+
+    def upload_avatar(self, file_path: str) -> dict:
+        """Upload an avatar image for the agent.
+
+        Args:
+            file_path: Path to image file (PNG, JPG, max 5MB).
+
+        Returns:
+            Dict with avatarUrl of the uploaded image.
+        """
+        with open(file_path, "rb") as f:
+            response = self._client.post(
+                "/agent/avatar",
+                files={"file": f},
+                headers={"Content-Type": None},  # let httpx set multipart
+            )
+        if not response.is_success:
+            _raise_for_status(response)
+        return response.json()
+
+    def set_webhook(self, url: str) -> dict:
+        """Set the webhook URL for external tool calls.
+
+        Args:
+            url: HTTPS URL that receives tool call webhooks.
+
+        Returns:
+            Dict with updated webhook configuration.
+        """
+        response = self._client.put("/agent/webhook", json={"url": url})
+        if not response.is_success:
+            _raise_for_status(response)
+        return response.json()
+
+    def publish(self) -> dict:
+        """Submit agent for marketplace review.
+
+        After you have tested and are satisfied with your agent, call this
+        to submit it for review. Zinq reviews agents before they go live
+        in the marketplace.
+
+        Returns:
+            Dict with: status ("pending_review"), estimated_review_time.
+        """
+        response = self._client.post("/agent/publish")
+        if not response.is_success:
+            _raise_for_status(response)
+        return response.json()
+
     def definition(self) -> str:
         """Get the current YAML definition.
 

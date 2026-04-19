@@ -395,18 +395,27 @@ See the [`examples/`](examples/) directory:
 | [`rosas_bakery/`](examples/rosas_bakery/) | Bakery ordering and daily specials | Pickup orders, broadcasts, custom cake handoff |
 | [`dr_sarah_nutrition/`](examples/dr_sarah_nutrition/) | Nutrition consultations and meal plans | Booking, intake forms, AI advice, safety guardrails |
 
-## Documentation
+## Developer Guides
 
-Detailed guides are in the [`docs/`](docs/) directory:
+Three paths depending on what you are building. Everything is done through the SDK -- there is no web dashboard.
+
+| Guide | For | Time |
+|-------|-----|------|
+| **[Personal Agent](docs/dev-guide-personal.md)** | Developers building agents for themselves | 10 min |
+| **[Marketplace Tier 1](docs/dev-guide-marketplace-tier1.md)** | Businesses creating AI agents (no webhook server) | 30 min |
+| **[Marketplace Tier 2](docs/dev-guide-marketplace-tier2.md)** | Businesses with custom integrations (webhook server) | 1 hour |
+
+## Reference Documentation
+
+Detailed reference docs are in the [`docs/`](docs/) directory:
 
 - **[Getting Started](docs/getting-started.md)** -- Build your first agent in 5 minutes
 - **[API Reference](docs/api-reference.md)** -- Every class, method, and parameter
 - **[Webhooks](docs/webhooks.md)** -- Receive real-time events from users
+- **[Business Agents](docs/business-agents.md)** -- Marketplace admin client reference
 - **[Examples Cookbook](docs/examples.md)** -- Copy-paste recipes for common agents
 - **[Deployment](docs/deployment.md)** -- Run your agent in production
 - **[Best Practices](docs/best-practices.md)** -- Tips for building great agents
-
-Full platform docs: [docs.zinq-app.com](https://docs.zinq-app.com)
 
 ## Requirements
 

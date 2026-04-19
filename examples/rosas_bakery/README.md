@@ -23,7 +23,7 @@ A complete marketplace agent example for a bakery. Customers order pickups, ask 
 
 - Python 3.10+
 - A Zinq business account (get one at [zinq-app.com/business](https://zinq-app.com/business))
-- Your `ZINQ_BIZ_KEY` and `ZINQ_WEBHOOK_SECRET` from the dashboard
+- Your `ZINQ_BIZ_KEY` and `ZINQ_WEBHOOK_SECRET` (set as environment variables)
 
 ## Setup
 
