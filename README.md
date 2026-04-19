@@ -1,0 +1,252 @@
+# Zinq Agent Python SDK
+
+<!-- TODO: Add logo/banner image here -->
+<!-- ![Zinq Agent SDK](https://zinq-app.com/assets/sdk-banner.png) -->
+
+**Build personal AI agents that live inside the Zinq app.**
+
+Your agent gets its own chat thread in the user's Zinq app. It can read their diary, send them vibes, remember things about them, and optionally use Gemini for AI-powered responses -- all through a clean Python API.
+
+[![PyPI version](https://img.shields.io/pypi/v/zinq-agent)](https://pypi.org/project/zinq-agent/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+---
+
+## Install
+
+```bash
+pip install zinq-agent
+```
+
+For webhook support (receiving real-time events from users):
+
+```bash
+pip install zinq-agent[webhook]
+```
+
+## Quick Start
+
+Five lines to send your first vibe:
+
+```python
+from zinq_agent import ZinqAgent
+
+agent = ZinqAgent(api_key="zak_your_key_here")
+agent.vibes.send(text="Hey! Your agent is alive.")
+agent.close()
+```
+
+Or even shorter with a context manager:
+
+```python
+from zinq_agent import ZinqAgent
+
+with ZinqAgent(api_key="zak_your_key_here") as agent:
+    agent.vibes.send(text="Hey! Your agent is alive.")
+```
+
+## What Can Your Agent Do?
+
+### Read the user's diary
+
+```python
+# Browse entries
+for entry in agent.diary.iter(start="2026-04-01"):
+    print(f"{entry.created_at}: {entry.text}")
+
+# Semantic search
+results = agent.diary.search("morning workouts", limit=5)
+for r in results.results:
+    print(f"[{r.similarity:.0%}] {r.text}")
+```
+
+### Send vibes (messages)
+
+```python
+# Simple text
+agent.vibes.send(text="Time for your afternoon walk!")
+
+# Interactive choices
+agent.vibes.send(
+    text="Which workout today?",
+    input_type="choice",
+    options=["Upper body", "Lower body", "Cardio", "Rest day"],
+)
+
+# Yes/no question
+agent.vibes.send(text="Did you drink water today?", input_type="yes_no")
+
+# Custom buttons
+agent.vibes.send(
+    text="Your weekly report is ready.",
+    buttons=[
+        {"label": "View Report", "value": "view_report"},
+        {"label": "Skip", "value": "skip"},
+    ],
+)
+```
+
+### Remember things
+
+```python
+# Save a preference
+agent.memories.save(key="diet", value="vegetarian", category="health")
+
+# Read it back
+mem = agent.memories.get("diet")
+print(mem.value)  # "vegetarian"
+
+# List all memories in a category
+health_mems = agent.memories.list(category="health")
+```
+
+### Know your user
+
+```python
+ctx = agent.user.context()
+print(f"Name: {ctx.name}")
+print(f"Timezone: {ctx.timezone}")
+print(f"Credits remaining: {ctx.credit_status.credits_remaining}")
+```
+
+### Use Gemini AI (optional)
+
+```python
+response = agent.gemini.chat(
+    messages=[
+        {"role": "system", "content": "You are a fitness coach."},
+        {"role": "user", "content": "What should I eat after a run?"},
+    ],
+    model="flash",  # or "pro" for higher quality
+)
+print(response.text)
+print(f"Credits used: {response.usage.credits_used}")
+```
+
+### Receive real-time events via webhooks
+
+```python
+from zinq_agent import ZinqAgent, ZinqWebhook
+
+agent = ZinqAgent()
+webhook = ZinqWebhook(secret="zws_your_secret_here")
+
+@webhook.on("vibe.received")
+def handle_vibe(event):
+    text = event.data.transcript or event.data.text
+    agent.vibes.send(text=f"You said: {text}")
+
+@webhook.on("agent.wave")
+def greet(event):
+    agent.vibes.send(text="Hey! I'm your agent.")
+
+webhook.start(port=8080)
+```
+
+## Environment Variables
+
+The SDK reads these automatically so you don't have to pass them in code:
+
+```bash
+export ZINQ_API_KEY=zak_your_key_here        # Required
+export ZINQ_WEBHOOK_SECRET=zws_your_secret   # Only for webhooks
+```
+
+```python
+# No arguments needed -- reads from environment
+agent = ZinqAgent()
+webhook = ZinqWebhook(secret=os.environ["ZINQ_WEBHOOK_SECRET"])
+```
+
+## Async Support
+
+Every method has an async equivalent:
+
+```python
+import asyncio
+from zinq_agent import AsyncZinqAgent
+
+async def main():
+    async with AsyncZinqAgent() as agent:
+        await agent.vibes.send(text="Async vibe!")
+
+        # Streaming Gemini
+        async for chunk in agent.gemini.stream_chat(
+            messages=[{"role": "user", "content": "Tell me a joke"}],
+        ):
+            print(chunk, end="", flush=True)
+
+asyncio.run(main())
+```
+
+## Error Handling
+
+All errors are typed so you can handle them precisely:
+
+```python
+from zinq_agent import (
+    ZinqError,                 # Base -- catch everything
+    AuthenticationError,       # 401 -- bad API key
+    RateLimitError,            # 429 -- slow down
+    InsufficientCreditsError,  # 402 -- user out of credits
+    NotFoundError,             # 404 -- resource missing
+    ValidationError,           # 422 -- bad request params
+    ServerError,               # 5xx -- Zinq backend issue
+)
+
+try:
+    agent.gemini.chat(messages=[...])
+except InsufficientCreditsError as e:
+    print(f"Need {e.credits_required} credits, have {e.credits_remaining}")
+except RateLimitError as e:
+    print(f"Rate limited. Retry in {e.retry_after} seconds.")
+except ZinqError as e:
+    print(f"Something went wrong: {e.message}")
+```
+
+## Examples
+
+See the [`examples/`](examples/) directory:
+
+| Example | Description | Requires Webhooks? |
+|---------|-------------|-------------------|
+| [`echo_bot.py`](examples/echo_bot.py) | Echoes back everything the user says | Yes |
+| [`appointment_bot.py`](examples/appointment_bot.py) | Polling-based appointment scheduler | No |
+| [`personal_shopper.py`](examples/personal_shopper.py) | Uses Gemini + memories for personalized recommendations | Yes |
+
+## Documentation
+
+Detailed guides are in the [`docs/`](docs/) directory:
+
+- **[Getting Started](docs/getting-started.md)** -- Build your first agent in 5 minutes
+- **[API Reference](docs/api-reference.md)** -- Every class, method, and parameter
+- **[Webhooks](docs/webhooks.md)** -- Receive real-time events from users
+- **[Examples Cookbook](docs/examples.md)** -- Copy-paste recipes for common agents
+- **[Deployment](docs/deployment.md)** -- Run your agent in production
+- **[Best Practices](docs/best-practices.md)** -- Tips for building great agents
+
+Full platform docs: [docs.zinq-app.com](https://docs.zinq-app.com)
+
+## Requirements
+
+- Python 3.10+
+- [`httpx`](https://www.python-httpx.org/) -- HTTP client
+- [`pydantic`](https://docs.pydantic.dev/) -- Data validation
+- [`flask`](https://flask.palletsprojects.com/) -- Webhook server (optional)
+
+## Contributing
+
+Contributions are welcome! Please open an issue first to discuss what you'd like to change.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feat/my-feature`)
+3. Install dev dependencies: `pip install -e ".[dev]"`
+4. Run tests: `pytest`
+5. Run linter: `ruff check .`
+6. Run type checker: `mypy zinq_agent`
+7. Open a pull request
+
+## License
+
+MIT License. See [LICENSE](LICENSE) for details.

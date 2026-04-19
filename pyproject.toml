@@ -1,0 +1,64 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "zinq-agent"
+version = "0.1.0"
+description = "Python SDK for building personal AI agents on the Zinq platform"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "Zinq", email = "dev@zinq-app.com" },
+]
+keywords = ["zinq", "agent", "ai", "personal-agent", "sdk"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = [
+    "httpx>=0.25.0",
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+webhook = ["flask>=3.0.0"]
+dev = [
+    "pytest>=8.0.0",
+    "respx>=0.21.0",
+    "flask>=3.0.0",
+    "ruff>=0.4.0",
+    "mypy>=1.10.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/zinq-app/zinq-agent-python"
+Documentation = "https://docs.zinq-app.com/sdk/python"
+Repository = "https://github.com/zinq-app/zinq-agent-python"
+Issues = "https://github.com/zinq-app/zinq-agent-python/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["zinq_agent"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
