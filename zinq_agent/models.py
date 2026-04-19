@@ -173,6 +173,42 @@ class UserContext(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Contacts / Connections
+# ---------------------------------------------------------------------------
+
+
+class Contact(BaseModel):
+    """A user's connection (friend, colleague, club member)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: int
+    name: str
+    nickname: str | None = None
+    avatar_url: str | None = Field(default=None, alias="avatarUrl")
+    zone_name: str | None = Field(default=None, alias="zoneName")
+    zone_type: str | None = Field(default=None, alias="zoneType")
+    connection_type: str | None = Field(default=None, alias="connectionType")
+    last_active: datetime | None = Field(default=None, alias="lastActive")
+    presence_status: str | None = Field(default=None, alias="presenceStatus")
+    is_system: bool = Field(default=False, alias="isSystem")
+
+
+class Zone(BaseModel):
+    """A user's zone (life zone or club)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: int
+    name: str
+    zone_type: str = Field(alias="zoneType")
+    member_count: int = Field(default=0, alias="memberCount")
+    is_owner: bool = Field(default=False, alias="isOwner")
+    description: str | None = None
+    avatar_url: str | None = Field(default=None, alias="avatarUrl")
+
+
+# ---------------------------------------------------------------------------
 # Gemini
 # ---------------------------------------------------------------------------
 

@@ -236,6 +236,57 @@ class DiaryClient:
 
         return SearchResults.model_validate(response.json())
 
+    def save(self, text: str, *, mood_score: int | None = None) -> dict:
+        """Save a new entry to the user's diary.
+
+        Args:
+            text: The diary entry text.
+            mood_score: Optional mood score 1-10.
+
+        Returns:
+            Dict with vibe_id of the created diary entry.
+        """
+        body: dict[str, Any] = {"text": text}
+        if mood_score is not None:
+            body["moodScore"] = mood_score
+
+        response = self._client.post("/diary", json=body)
+        if response.status_code not in (200, 201):
+            _raise_for_status(response)
+
+        return response.json()
+
+    def star(self, vibe_id: int, *, rating: int = 1) -> dict:
+        """Star/save a vibe to the diary.
+
+        Args:
+            vibe_id: The vibe to star.
+            rating: Star rating (default 1).
+
+        Returns:
+            Confirmation dict.
+        """
+        response = self._client.post(
+            f"/diary/{vibe_id}/star", json={"rating": rating}
+        )
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return response.json()
+
+    def archive(self, vibe_id: int) -> dict:
+        """Archive a vibe (soft delete from diary).
+
+        Args:
+            vibe_id: The vibe to archive.
+
+        Returns:
+            Confirmation dict.
+        """
+        response = self._client.post(f"/diary/{vibe_id}/archive")
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return response.json()
+
 
 class VibeClient:
     """Client for sending vibes to the user and reading received vibes.
@@ -427,6 +478,204 @@ class MemoryClient:
         response = self._client.delete(f"/memories/{key}")
         if response.status_code not in (200, 204):
             _raise_for_status(response)
+
+
+class ContactsClient:
+    """Client for reading the user's connections/contacts.
+
+    Requires the ``contacts`` data access permission to be enabled
+    by the user in My Agents settings.
+
+    Usage::
+
+        contacts = agent.contacts.list()
+        for c in contacts:
+            print(f"{c.name} — last active {c.last_active}")
+
+        # Search by name
+        results = agent.contacts.search("Glenn")
+    """
+
+    def __init__(self, http_client: httpx.Client) -> None:
+        self._client = http_client
+
+    def list(self, *, limit: int = 50, offset: int = 0) -> list[Contact]:
+        """List the user's connections.
+
+        Args:
+            limit: Max results per page (default 50, max 200).
+            offset: Pagination offset.
+
+        Returns:
+            List of Contact objects with name, avatar, status, zone.
+        """
+        response = self._client.get(
+            "/contacts", params={"limit": limit, "offset": offset}
+        )
+        if response.status_code != 200:
+            _raise_for_status(response)
+
+        return [Contact.model_validate(c) for c in response.json().get("contacts", [])]
+
+    def search(self, query: str, *, limit: int = 10) -> list[Contact]:
+        """Search contacts by name.
+
+        Args:
+            query: Name to search for (case-insensitive partial match).
+            limit: Max results (default 10).
+
+        Returns:
+            Matching Contact objects.
+        """
+        response = self._client.get(
+            "/contacts/search", params={"q": query, "limit": limit}
+        )
+        if response.status_code != 200:
+            _raise_for_status(response)
+
+        return [Contact.model_validate(c) for c in response.json().get("contacts", [])]
+
+    def get(self, contact_id: str) -> Contact:
+        """Get a single contact by ID.
+
+        Args:
+            contact_id: The connection ID.
+
+        Returns:
+            Contact object.
+        """
+        response = self._client.get(f"/contacts/{contact_id}")
+        if response.status_code != 200:
+            _raise_for_status(response)
+
+        return Contact.model_validate(response.json())
+
+
+class ZonesClient:
+    """Client for reading the user's zones (life zones and clubs).
+
+    Usage::
+
+        zones = agent.zones.list()
+        for z in zones:
+            print(f"{z.name} ({z.zone_type}) — {z.member_count} members")
+
+        # Get vibes from a specific zone/club
+        vibes = agent.zones.vibes(zone_id=42, limit=20)
+    """
+
+    def __init__(self, http_client: httpx.Client) -> None:
+        self._client = http_client
+
+    def list(self) -> list[Zone]:
+        """List all of the user's zones (life zones + clubs).
+
+        Returns:
+            List of Zone objects.
+        """
+        response = self._client.get("/zones")
+        if response.status_code != 200:
+            _raise_for_status(response)
+
+        return [Zone.model_validate(z) for z in response.json().get("zones", [])]
+
+    def vibes(self, zone_id: int, *, limit: int = 20, offset: int = 0) -> list[Vibe]:
+        """Get vibes from a specific zone or club.
+
+        Args:
+            zone_id: The zone/club ID.
+            limit: Max results (default 20).
+            offset: Pagination offset.
+
+        Returns:
+            List of Vibe objects from that zone.
+        """
+        response = self._client.get(
+            f"/zones/{zone_id}/vibes",
+            params={"limit": limit, "offset": offset},
+        )
+        if response.status_code != 200:
+            _raise_for_status(response)
+
+        return [Vibe.model_validate(v) for v in response.json().get("vibes", [])]
+
+
+    def create(
+        self,
+        name: str,
+        *,
+        zone_type: str = "club",
+        description: str | None = None,
+    ) -> Zone:
+        """Create a new zone or club.
+
+        Args:
+            name: Display name for the zone/club.
+            zone_type: "life", "club", or "event" (default "club").
+            description: Optional description.
+
+        Returns:
+            The created Zone object.
+        """
+        body: dict[str, Any] = {"name": name, "zoneType": zone_type}
+        if description:
+            body["description"] = description
+
+        response = self._client.post("/zones", json=body)
+        if response.status_code not in (200, 201):
+            _raise_for_status(response)
+
+        return Zone.model_validate(response.json())
+
+    def invite(self, zone_id: int, user_ids: list[int]) -> dict:
+        """Invite users to a club/zone.
+
+        Args:
+            zone_id: The club/zone ID.
+            user_ids: List of user IDs to invite.
+
+        Returns:
+            Confirmation dict.
+        """
+        response = self._client.post(
+            f"/zones/{zone_id}/invite",
+            json={"userIds": user_ids},
+        )
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return response.json()
+
+
+class FeedClient:
+    """Client for reading the user's vibe feed.
+
+    Usage::
+
+        vibes = agent.feed.list(limit=10)
+        for v in vibes:
+            print(f"{v.user_name}: {v.text or v.transcript_summary}")
+    """
+
+    def __init__(self, http_client: httpx.Client) -> None:
+        self._client = http_client
+
+    def list(self, *, limit: int = 20, offset: int = 0) -> list[Vibe]:
+        """Get the user's vibe feed (vibes from connections).
+
+        Args:
+            limit: Max results (default 20).
+            offset: Pagination offset.
+
+        Returns:
+            List of Vibe objects.
+        """
+        response = self._client.get(
+            "/feed", params={"limit": limit, "offset": offset}
+        )
+        if response.status_code != 200:
+            _raise_for_status(response)
+
+        return [Vibe.model_validate(v) for v in response.json().get("vibes", [])]
 
 
 class UserClient:
@@ -718,6 +967,9 @@ class ZinqAgent:
 
         self.diary = DiaryClient(self._client)
         self.vibes = VibeClient(self._client)
+        self.feed = FeedClient(self._client)
+        self.contacts = ContactsClient(self._client)
+        self.zones = ZonesClient(self._client)
         self.memories = MemoryClient(self._client)
         self.user = UserClient(self._client)
         self.gemini = GeminiClient(self._client)

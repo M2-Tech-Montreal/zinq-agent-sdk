@@ -49,6 +49,7 @@ from .models import (
     AgentPreferences,
     AgentWaveData,
     CharmReceivedData,
+    Contact,
     CreditStatus,
     DiaryEntry,
     DiaryPage,
@@ -68,6 +69,7 @@ from .models import (
     WebhookAgent,
     WebhookEvent,
     WebhookUser,
+    Zone,
 )
 from .webhook import ZinqWebhook
 
@@ -93,8 +95,10 @@ __all__ = [
     "NotificationHours",
     "SearchResult",
     "SearchResults",
+    "Contact",
     "UserContext",
     "Vibe",
+    "Zone",
     "VibeSendResult",
     "VibeReceivedData",
     "VibeReplyData",
