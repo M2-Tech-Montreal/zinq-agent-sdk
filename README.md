@@ -48,6 +48,7 @@ Your agent joins this ecosystem. It has its own profile, avatar, and chat thread
 - **Personal shoppers** — AI-powered product recommendations for small businesses
 - **Appointment bookers** — Automated scheduling for barbers, restaurants, clinics
 - **Fitness coaches** — Personalized workout plans using diary data
+- **Crypto trading agents** — Portfolio monitoring, price alerts, P&L summaries via Binance/Coinbase
 - **Daily digest agents** — Morning briefings from multiple data sources
 
 ---
@@ -337,6 +338,7 @@ The Zinq Agent SDK is perfect for building:
 | **Slack Bot** | Bridge Slack mentions to mobile, summarize channels | [examples/](docs/examples.md) |
 | **Personal Shopper** | AI product recommendations for online stores | [personal_shopper.py](examples/personal_shopper.py) |
 | **Appointment Scheduler** | Automated booking for service businesses | [appointment_bot.py](examples/appointment_bot.py) |
+| **Crypto Trading Agent** | Portfolio monitoring, price alerts, P&L summaries via Binance | [trading_bot.py](examples/trading_bot.py) |
 | **Fitness Coach** | Personalized workouts using diary data + Gemini | [examples](docs/examples.md) |
 | **Daily Digest** | Morning briefing from email, calendar, news | [examples](docs/examples.md) |
 | **IoT Monitor** | Smart home alerts via Zinq vibes | Build your own! |
