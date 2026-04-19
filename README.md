@@ -327,6 +327,33 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
+## Business Agents (Coming Soon)
+
+The SDK will also support **business agents** — AI agents for bakeries, barber shops, restaurants, clothing brands, and any service business. Customers chat with your agent to browse, book, and order. You manage it through a dashboard API.
+
+```python
+from zinq_agent import ZinqBusinessClient
+
+biz = ZinqBusinessClient(api_key="zbk_xxxxx")
+
+# See your customers
+clients = biz.clients.list()
+
+# Reply to a customer
+biz.conversations.reply(session_id="sess_abc", text="Your order is ready!")
+
+# Send a broadcast to all customers
+biz.broadcast("Fresh sourdough just came out of the oven!")
+
+# Update today's specials
+biz.data.clear("daily_specials")
+biz.data.add("daily_specials", {"name": "Croissants", "price": 3.50})
+```
+
+Full docs: [docs/business-agents.md](docs/business-agents.md)
+
+---
+
 ## Use Cases
 
 The Zinq Agent SDK is perfect for building:
