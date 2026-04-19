@@ -339,8 +339,10 @@ The Zinq Agent SDK is perfect for building:
 | **Appointment Scheduler** | Automated booking for service businesses | [appointment_bot.py](examples/appointment_bot.py) |
 | **Fitness Coach** | Personalized workouts using diary data + Gemini | [examples](docs/examples.md) |
 | **Daily Digest** | Morning briefing from email, calendar, news | [examples](docs/examples.md) |
-| **Customer Support** | AI-first support with human handoff | [docs](docs/webhooks.md) |
 | **IoT Monitor** | Smart home alerts via Zinq vibes | Build your own! |
+| **Customer Support** | AI-first support with human handoff (Business Agent) | [docs/business-agents.md](docs/business-agents.md) |
+| **Online Shop** | AI personal shopper for your brand (Business Agent) | [docs/business-agents.md](docs/business-agents.md) |
+| **Appointment Booking** | Barber, spa, clinic scheduling (Business Agent) | [docs/business-agents.md](docs/business-agents.md) |
 
 ## Keywords
 
