@@ -15,7 +15,23 @@
 
 [Zinq](https://zinq-app.com) is a social app where every interaction happens through **vibes** — short voice, video, photo, or text messages. Think WhatsApp meets a personal diary, with AI agents built in. Users connect with people and businesses, keep a private diary, and chat with AI agents that understand their context.
 
-Your agent lives inside this ecosystem. It has its own profile, avatar, and chat thread — just like a real contact. Users interact with your agent the same way they interact with friends: by sending vibes.
+Every voice and video vibe is **automatically transcribed and summarized** by Gemini — so your agent can read what users said, not just what they typed. The user's diary builds a rich personal context over time that your agent can search and learn from.
+
+Zinq ships with **14 built-in AI agents** that users already interact with daily:
+
+| Agent | What It Does |
+|-------|-------------|
+| **Aura** | Mental wellness coach — guided meditation, CBT exercises, mood tracking |
+| **Atlas** | Fitness & nutrition — workout plans, fasting protocols, supplement tracking |
+| **Cue** | Personal task manager — todo lists organized into projects |
+| **Compass** | Travel concierge — trip planning, restaurant recommendations |
+| **Flick** | Movie advisor — personalized recommendations |
+| **Nexus** | Relationship manager — connection insights, intro suggestions |
+| **Vantage** | Pitch & negotiation prep coach |
+| **Astra** | Astrology — birth charts, daily horoscopes |
+| + 6 more | Games (chess, word games), diary assistant, support, finance |
+
+Your agent joins this ecosystem. It has its own profile, avatar, and chat thread — just like a real contact. Users interact with your agent the same way they interact with these built-in agents: by sending vibes (voice, video, text, photos).
 
 ### Why Zinq Agents?
 
