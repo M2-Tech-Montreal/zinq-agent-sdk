@@ -36,6 +36,7 @@ For webhook support::
 """
 
 from .client import AsyncZinqAgent, ZinqAgent
+from .marketplace import ZinqMarketplaceAdmin
 from .exceptions import (
     AuthenticationError,
     InsufficientCreditsError,
@@ -79,6 +80,7 @@ __all__ = [
     # Main classes
     "ZinqAgent",
     "AsyncZinqAgent",
+    "ZinqMarketplaceAdmin",
     "ZinqWebhook",
     # Models
     "AgentPreferences",

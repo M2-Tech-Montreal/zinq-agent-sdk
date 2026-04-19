@@ -219,13 +219,47 @@ def greet(event):
 webhook.start(port=8080)
 ```
 
+### Marketplace Agent Admin
+
+If you published a marketplace agent, use `ZinqMarketplaceAdmin` to manage it:
+
+```python
+from zinq_agent import ZinqMarketplaceAdmin
+
+admin = ZinqMarketplaceAdmin(api_key="zbk_xxxxx")  # or set ZINQ_BIZ_KEY env var
+
+# Deploy your agent definition
+admin.agent.deploy(open("agent.yaml").read())
+
+# Check how many users have enabled your agent
+print(f"{admin.users.count()} users")
+
+# Reply to conversations awaiting human response
+for convo in admin.conversations.list(status="awaiting_human"):
+    admin.conversations.reply(convo["sessionId"], "Thanks for reaching out!")
+
+# Send a broadcast to all users
+admin.broadcast("We just launched a new feature!")
+
+# Manage data collections (product catalogs, FAQ, etc.)
+admin.data.add("products", {"name": "Widget", "price": 9.99})
+products = admin.data.list("products")
+
+# Test your agent without a real user
+response = admin.test.chat("What services do you offer?")
+print(response["reply"])
+```
+
+Full reference: **[docs/business-agents.md](docs/business-agents.md)**
+
 ## Environment Variables
 
 The SDK reads these automatically so you don't have to pass them in code:
 
 ```bash
-export ZINQ_API_KEY=zak_your_key_here        # Required
+export ZINQ_API_KEY=zak_your_key_here        # Required for ZinqAgent
 export ZINQ_WEBHOOK_SECRET=zws_your_secret   # Only for webhooks
+export ZINQ_BIZ_KEY=zbk_your_key_here        # Only for ZinqMarketplaceAdmin
 ```
 
 ```python

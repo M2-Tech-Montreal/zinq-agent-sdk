@@ -45,6 +45,7 @@ from .exceptions import (
 )
 from .gemini import AsyncGeminiClient, GeminiClient
 from .models import (
+    Contact,
     DiaryEntry,
     DiaryPage,
     Memory,
@@ -53,6 +54,7 @@ from .models import (
     UserContext,
     Vibe,
     VibeSendResult,
+    Zone,
 )
 
 _DEFAULT_BASE_URL = "https://zinq-app.com/api"
@@ -550,6 +552,23 @@ class ContactsClient:
 
         return Contact.model_validate(response.json())
 
+    def profile(self, user_id: int) -> dict:
+        """Get a contact's public profile.
+
+        Returns public info: name, avatar, bio, zones. Does NOT return
+        private data (phone, email, diary).
+
+        Args:
+            user_id: The user ID to look up.
+
+        Returns:
+            Dict with public profile fields.
+        """
+        response = self._client.get(f"/contacts/{user_id}/profile")
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return response.json()
+
 
 class ZonesClient:
     """Client for reading the user's zones (life zones and clubs).
@@ -578,6 +597,20 @@ class ZonesClient:
             _raise_for_status(response)
 
         return [Zone.model_validate(z) for z in response.json().get("zones", [])]
+
+    def get(self, zone_id: int) -> Zone:
+        """Get a zone/club's profile (name, description, member count).
+
+        Args:
+            zone_id: The zone/club ID.
+
+        Returns:
+            Zone object.
+        """
+        response = self._client.get(f"/zones/{zone_id}")
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return Zone.model_validate(response.json())
 
     def vibes(self, zone_id: int, *, limit: int = 20, offset: int = 0) -> list[Vibe]:
         """Get vibes from a specific zone or club.
