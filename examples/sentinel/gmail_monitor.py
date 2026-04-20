@@ -28,7 +28,15 @@ def get_gmail_service(account: str):
     """Build an authenticated Gmail API service for the given account."""
     TOKEN_DIR.mkdir(exist_ok=True)
     token_file = TOKEN_DIR / f"token_{account.replace('@', '_at_')}.json"
-    creds_file = Path(__file__).parent / "credentials.json"
+    # Look for credentials.json in multiple locations
+    creds_file = None
+    for p in [
+        Path(__file__).parent / "credentials.json",
+        Path.home() / "gmail_secret" / "client_secret.json",
+    ]:
+        if p.exists():
+            creds_file = p
+            break
 
     creds = None
     if token_file.exists():
@@ -38,11 +46,13 @@ def get_gmail_service(account: str):
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            if not creds_file.exists():
-                _log(f"credentials.json not found — cannot auth {account}")
+            if not creds_file:
+                _log(f"No credentials file found — cannot auth {account}")
                 return None
             flow = InstalledAppFlow.from_client_secrets_file(str(creds_file), SCOPES)
-            creds = flow.run_local_server(port=0)
+            # Console-based auth — prints a URL, you paste back the code
+            _log(f"Authorizing {account} — open the URL below in any browser:")
+            creds = flow.run_console()
 
         token_file.write_text(creds.to_json())
 
