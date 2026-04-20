@@ -163,7 +163,9 @@ def handle_message(text: str) -> str:
                 "If there's a long email, give the TL;DR and ask if they want details. "
                 "When they ask about Slack, summarize the conversations. "
                 "If they ask to send a Slack message, do it and confirm. "
-                "Be conversational, not robotic."
+                "Be conversational, not robotic. "
+                "Format responses in Markdown — use **bold** for names and key info, "
+                "bullet points for lists, and `code` for amounts/dates."
             )},
         ]
         # Add conversation history for context
