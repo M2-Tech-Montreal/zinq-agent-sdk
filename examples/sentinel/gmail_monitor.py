@@ -117,6 +117,95 @@ def fetch_unread(account: str, since: str | None = None) -> list[dict[str, Any]]
     return emails
 
 
+def search_emails(account: str, query: str, max_results: int = 5) -> list[dict[str, Any]]:
+    """Search emails (read or unread) matching a query string."""
+    service = get_gmail_service(account)
+    if not service:
+        return []
+
+    try:
+        results = service.users().messages().list(
+            userId="me", q=query, maxResults=max_results
+        ).execute()
+    except Exception as e:
+        _log(f"Error searching {account} for '{query}': {e}")
+        return []
+
+    messages = results.get("messages", [])
+    if not messages:
+        return []
+
+    emails = []
+    for msg_ref in messages:
+        try:
+            msg = service.users().messages().get(
+                userId="me", id=msg_ref["id"], format="full"
+            ).execute()
+
+            headers = {h["name"]: h["value"] for h in msg.get("payload", {}).get("headers", [])}
+            body = _extract_body(msg.get("payload", {}))
+
+            emails.append({
+                "id": msg_ref["id"],
+                "sender": headers.get("From", "Unknown"),
+                "subject": headers.get("Subject", "(no subject)"),
+                "snippet": msg.get("snippet", ""),
+                "body": body[:4000],
+                "date": headers.get("Date", ""),
+                "account": account,
+            })
+        except Exception as e:
+            _log(f"Error fetching message {msg_ref['id']}: {e}")
+
+    _log(f"{account}: {len(emails)} results for '{query}'")
+    return emails
+
+
+def fetch_email_body(account: str, msg_id: str) -> str:
+    """Fetch the full body text of an email by ID."""
+    service = get_gmail_service(account)
+    if not service:
+        return ""
+
+    try:
+        msg = service.users().messages().get(
+            userId="me", id=msg_id, format="full"
+        ).execute()
+
+        payload = msg.get("payload", {})
+        body_text = _extract_body(payload)
+        return body_text[:4000]  # Cap at 4k chars
+
+    except Exception as e:
+        _log(f"Error fetching body for {msg_id}: {e}")
+        return ""
+
+
+def _extract_body(payload: dict) -> str:
+    """Recursively extract plain text body from Gmail payload."""
+    # Direct body
+    if payload.get("mimeType") == "text/plain":
+        data = payload.get("body", {}).get("data", "")
+        if data:
+            return base64.urlsafe_b64decode(data).decode("utf-8", errors="replace")
+
+    # Multipart — recurse into parts
+    parts = payload.get("parts", [])
+    for part in parts:
+        if part.get("mimeType") == "text/plain":
+            data = part.get("body", {}).get("data", "")
+            if data:
+                return base64.urlsafe_b64decode(data).decode("utf-8", errors="replace")
+
+    # Fallback: try first part with body data
+    for part in parts:
+        result = _extract_body(part)
+        if result:
+            return result
+
+    return ""
+
+
 def classify_urgency(email: dict[str, Any]) -> str:
     """Classify email urgency based on keywords and VIP senders.
 
