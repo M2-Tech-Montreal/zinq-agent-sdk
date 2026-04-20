@@ -386,6 +386,19 @@ class VibeClient:
             _raise_for_status(response)
         return response.json()
 
+    def send_to_zone(self, zone_id: int, text: str) -> VibeSendResult:
+        """Send a vibe to a zone/club (on behalf of the owner).
+
+        Args:
+            zone_id: The zone ID to post to.
+            text: The vibe text content.
+        """
+        body = {"textContent": text, "zoneId": zone_id}
+        response = self._client.post("/vibes/send-to-zone", json=body)
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return VibeSendResult.model_validate(response.json())
+
     def received(
         self,
         *,
