@@ -64,19 +64,22 @@ class GeminiClient:
         Args:
             messages: Conversation history with ``role`` and ``content`` keys.
                       Roles: ``system``, ``user``, ``assistant``.
-            stream: If True, return a streaming iterator of text chunks.
+            stream: Not supported. Raises NotImplementedError if True.
             model: ``"flash"`` (default, cheapest) or ``"pro"`` (higher quality).
             temperature: Sampling temperature, 0.0-1.0 (default 0.7).
             max_tokens: Maximum response tokens (default 2048, max 8192).
             tools: Optional function-calling tool definitions in Gemini format.
 
         Returns:
-            GeminiResponse if stream=False, or Iterator[str] if stream=True.
+            GeminiResponse.
 
         Raises:
+            NotImplementedError: If stream=True.
             InsufficientCreditsError: If the user has no credits remaining.
             ZinqError: On other API errors.
         """
+        if stream:
+            raise NotImplementedError("Streaming is not supported. Use stream=False.")
         if stream:
             return self._stream_chat(
                 messages,
@@ -126,58 +129,6 @@ class GeminiClient:
 
         return GeminiResponse.model_validate(response.json())
 
-    def _stream_chat(
-        self,
-        messages: list[dict[str, str]],
-        *,
-        model: str,
-        temperature: float,
-        max_tokens: int,
-        tools: list[dict[str, Any]] | None = None,
-    ) -> Iterator[str]:
-        """Streaming variant -- yields text chunks via SSE.
-
-        Usage::
-
-            for chunk in agent.gemini.chat(messages, stream=True):
-                print(chunk, end="", flush=True)
-        """
-        body: dict[str, Any] = {
-            "messages": messages,
-            "model": model,
-            "temperature": temperature,
-            "maxTokens": max_tokens,
-            "stream": True,
-        }
-        if tools is not None:
-            body["tools"] = tools
-
-        with self._client.stream("POST", "/gemini/chat", json=body) as response:
-            if response.status_code == 402:
-                response.read()
-                data = response.json()
-                raise InsufficientCreditsError(
-                    message=data.get("error", "Insufficient credits"),
-                    credits_remaining=data.get("creditsRemaining", 0),
-                    credits_required=data.get("creditsRequired", 0),
-                )
-
-            if response.status_code != 200:
-                response.read()
-                _raise_for_status(response)
-
-            for line in response.iter_lines():
-                if line.startswith("data: "):
-                    payload = line[6:]
-                    if payload.strip() == "[DONE]":
-                        break
-                    try:
-                        chunk = json.loads(payload)
-                        text = chunk.get("text") or chunk.get("content", "")
-                        if text:
-                            yield text
-                    except json.JSONDecodeError:
-                        continue
 
     def embed(
         self,
@@ -251,7 +202,7 @@ class AsyncGeminiClient:
     ) -> GeminiResponse:
         """Send a conversation to Gemini and get a response.
 
-        For streaming, use ``stream_chat()`` instead.
+        Streaming is not supported.
 
         Args:
             messages: Conversation history with ``role`` and ``content`` keys.
@@ -295,47 +246,9 @@ class AsyncGeminiClient:
         temperature: float = 0.7,
         max_tokens: int = 2048,
     ) -> AsyncIterator[str]:
-        """Streaming chat -- yields text chunks via SSE.
-
-        Usage::
-
-            async for chunk in agent.gemini.stream_chat(messages):
-                print(chunk, end="", flush=True)
-        """
-        body: dict[str, Any] = {
-            "messages": messages,
-            "model": model,
-            "temperature": temperature,
-            "maxTokens": max_tokens,
-            "stream": True,
-        }
-
-        async with self._client.stream("POST", "/gemini/chat", json=body) as response:
-            if response.status_code == 402:
-                await response.aread()
-                data = response.json()
-                raise InsufficientCreditsError(
-                    message=data.get("error", "Insufficient credits"),
-                    credits_remaining=data.get("creditsRemaining", 0),
-                    credits_required=data.get("creditsRequired", 0),
-                )
-
-            if response.status_code != 200:
-                await response.aread()
-                _raise_for_status(response)
-
-            async for line in response.aiter_lines():
-                if line.startswith("data: "):
-                    payload = line[6:]
-                    if payload.strip() == "[DONE]":
-                        break
-                    try:
-                        chunk = json.loads(payload)
-                        text = chunk.get("text") or chunk.get("content", "")
-                        if text:
-                            yield text
-                    except json.JSONDecodeError:
-                        continue
+        """Not supported. Raises NotImplementedError."""
+        raise NotImplementedError("Streaming is not supported. Use chat() instead.")
+        yield ""  # unreachable — keeps the AsyncIterator return type valid
 
     async def embed(
         self,

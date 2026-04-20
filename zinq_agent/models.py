@@ -19,13 +19,17 @@ from pydantic import BaseModel, ConfigDict, Field
 class DiaryEntry(BaseModel):
     """A single diary vibe entry."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
     id: int
-    text: str | None = None
+    text: str | None = Field(default=None, alias="textContent")
     transcript: str | None = None
     media_type: str | None = Field(default=None, alias="mediaType")
     media_url: str | None = Field(default=None, alias="mediaUrl")
+    media_description: str | None = Field(default=None, alias="mediaDescription")
+    vibe_type: str | None = Field(default=None, alias="vibeType")
+    location_name: str | None = Field(default=None, alias="locationName")
+    city: str | None = None
     ai_tags: list[str] = Field(default_factory=list, alias="aiTags")
     created_at: datetime = Field(alias="createdAt")
 
@@ -33,34 +37,35 @@ class DiaryEntry(BaseModel):
 class DiaryPage(BaseModel):
     """Paginated diary entries."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
-    entries: list[DiaryEntry]
+    entries: list[DiaryEntry] = Field(default_factory=list, alias="vibes")
     page: int
-    total_pages: int = Field(alias="totalPages")
-    total_entries: int = Field(alias="totalEntries")
+    total_pages: int = Field(default=0, alias="totalPages")
+    total_entries: int = Field(default=0, alias="total")
 
 
 class SearchResult(BaseModel):
     """A single semantic search result from the diary."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
     id: int
-    text: str | None = None
+    text: str | None = Field(default=None, alias="textContent")
     ai_tags: list[str] = Field(default_factory=list, alias="aiTags")
-    similarity: float
-    created_at: datetime = Field(alias="createdAt")
+    similarity: float = 0.0
+    created_at: datetime | None = Field(default=None, alias="createdAt")
 
 
 class SearchResults(BaseModel):
     """Results from a diary semantic search."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
-    results: list[SearchResult]
+    results: list[SearchResult] = Field(default_factory=list, alias="vibes")
     query: str
-    embedding_credits_used: int = Field(alias="embeddingCreditsUsed")
+    total: int = 0
+    embedding_credits_used: int = Field(default=0, alias="embeddingCreditsUsed")
 
 
 # ---------------------------------------------------------------------------
@@ -71,26 +76,30 @@ class SearchResults(BaseModel):
 class Vibe(BaseModel):
     """A vibe sent to the agent by the user."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
     id: int
-    type: str
-    text: str | None = None
+    type: str | None = Field(default=None, alias="vibeType")
+    text: str | None = Field(default=None, alias="textContent")
     transcript: str | None = None
     media_url: str | None = Field(default=None, alias="mediaUrl")
+    media_description: str | None = Field(default=None, alias="mediaDescription")
     charm_emoji: str | None = Field(default=None, alias="charmEmoji")
     reply_to_vibe_id: int | None = Field(default=None, alias="replyToVibeId")
+    location_name: str | None = Field(default=None, alias="locationName")
+    city: str | None = None
     created_at: datetime = Field(alias="createdAt")
 
 
 class VibeSendResult(BaseModel):
     """Result of sending a vibe to the user."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
     vibe_id: int = Field(alias="vibeId")
-    delivered_at: datetime = Field(alias="deliveredAt")
-    push_sent: bool = Field(alias="pushSent")
+    success: bool = True
+    delivered_at: datetime | None = Field(default=None, alias="deliveredAt")
+    push_sent: bool | None = Field(default=None, alias="pushSent")
 
 
 # ---------------------------------------------------------------------------
@@ -101,22 +110,23 @@ class VibeSendResult(BaseModel):
 class Memory(BaseModel):
     """A persistent key-value memory scoped to this agent and user."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
     key: str
     value: str
     category: str | None = None
-    updated_at: datetime = Field(alias="updatedAt")
+    updated_at: datetime | None = Field(default=None, alias="updatedAt")
 
 
 class MemorySaveResult(BaseModel):
     """Result of saving or updating a memory."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
     key: str
-    created: bool
-    updated_at: datetime = Field(alias="updatedAt")
+    created: bool | None = Field(default=None)
+    saved: bool | None = Field(default=None)
+    updated_at: datetime | None = Field(default=None, alias="updatedAt")
 
 
 # ---------------------------------------------------------------------------
@@ -127,6 +137,8 @@ class MemorySaveResult(BaseModel):
 class NotificationHours(BaseModel):
     """Preferred notification hours (inclusive)."""
 
+    model_config = ConfigDict(extra="ignore")
+
     start: int
     end: int
 
@@ -134,7 +146,7 @@ class NotificationHours(BaseModel):
 class AgentPreferences(BaseModel):
     """User's agent interaction preferences."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
     notification_hours: NotificationHours | None = Field(
         default=None, alias="notificationHours"
@@ -147,29 +159,31 @@ class AgentPreferences(BaseModel):
 class CreditStatus(BaseModel):
     """User's current credit balance and tier."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
-    credits_remaining: int = Field(alias="creditsRemaining")
-    monthly_limit: int = Field(alias="monthlyLimit")
-    tier: str
-    reset_date: datetime = Field(alias="resetDate")
+    credits_remaining: int = Field(default=0, alias="creditsRemaining")
+    monthly_limit: int = Field(default=0, alias="monthlyLimit")
+    tier: str = "free"
+    reset_date: datetime | None = Field(default=None, alias="resetDate")
 
 
 class UserContext(BaseModel):
     """User profile and preferences relevant to agent operation."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
     user_id: int = Field(alias="userId")
     name: str
     nickname: str | None = None
     timezone: str
     locale: str | None = None
+    primary_language: str | None = Field(default=None, alias="primaryLanguage")
     country_code: str | None = Field(default=None, alias="countryCode")
     agent_preferences: AgentPreferences | None = Field(
         default=None, alias="agentPreferences"
     )
-    credit_status: CreditStatus = Field(alias="creditStatus")
+    preferences: dict | None = None
+    credit_status: CreditStatus | None = Field(default=None, alias="creditStatus")
 
 
 # ---------------------------------------------------------------------------
@@ -180,9 +194,9 @@ class UserContext(BaseModel):
 class Contact(BaseModel):
     """A user's connection (friend, colleague, club member)."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
-    id: int
+    id: int = Field(default=0, alias="userId")
     name: str
     nickname: str | None = None
     avatar_url: str | None = Field(default=None, alias="avatarUrl")
@@ -190,22 +204,30 @@ class Contact(BaseModel):
     zone_type: str | None = Field(default=None, alias="zoneType")
     connection_type: str | None = Field(default=None, alias="connectionType")
     last_active: datetime | None = Field(default=None, alias="lastActive")
+    last_seen_at: datetime | None = Field(default=None, alias="lastSeenAt")
     presence_status: str | None = Field(default=None, alias="presenceStatus")
+    is_online: bool | None = Field(default=None, alias="isOnline")
     is_system: bool = Field(default=False, alias="isSystem")
+    is_agent: bool = Field(default=False, alias="isAgent")
 
 
 class Zone(BaseModel):
     """A user's zone (life zone or club)."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
     id: int
-    name: str
+    name: str | None = Field(default=None, alias="customName")
     zone_type: str = Field(alias="zoneType")
+    display_name: str | None = Field(default=None, alias="displayName")
     member_count: int = Field(default=0, alias="memberCount")
     is_owner: bool = Field(default=False, alias="isOwner")
+    is_primary: bool = Field(default=False, alias="isPrimary")
     description: str | None = None
+    bio: str | None = None
     avatar_url: str | None = Field(default=None, alias="avatarUrl")
+    photo_url: str | None = Field(default=None, alias="photoUrl")
+    sort_order: int | None = Field(default=None, alias="sortOrder")
 
 
 # ---------------------------------------------------------------------------
@@ -216,33 +238,33 @@ class Zone(BaseModel):
 class GeminiUsage(BaseModel):
     """Token usage and credit cost for a Gemini call."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
-    prompt_tokens: int = Field(alias="promptTokens")
-    completion_tokens: int = Field(alias="completionTokens")
-    total_tokens: int = Field(alias="totalTokens")
-    credits_used: int = Field(alias="creditsUsed")
+    prompt_tokens: int = Field(default=0, alias="promptTokens")
+    completion_tokens: int = Field(default=0, alias="completionTokens")
+    total_tokens: int = Field(default=0, alias="totalTokens")
+    credits_used: int = Field(default=0, alias="creditsUsed")
 
 
 class GeminiResponse(BaseModel):
     """Response from the Gemini proxy."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
-    text: str = Field(alias="content")
+    text: str = Field(default="", alias="content")
     tool_calls: list[dict] = Field(default_factory=list, alias="toolCalls")
-    usage: GeminiUsage
-    model: str
+    usage: GeminiUsage | None = None
+    model: str = ""
 
 
 class EmbeddingResponse(BaseModel):
     """Response from the embedding endpoint."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
     embedding: list[float]
-    dimensions: int
-    credits_used: int = Field(alias="creditsUsed")
+    dimensions: int = 0
+    credits_used: int = Field(default=0, alias="creditsUsed")
 
 
 # ---------------------------------------------------------------------------
@@ -253,12 +275,16 @@ class EmbeddingResponse(BaseModel):
 class WebhookAgent(BaseModel):
     """Agent identity in a webhook payload."""
 
+    model_config = ConfigDict(extra="ignore")
+
     id: int
     name: str
 
 
 class WebhookUser(BaseModel):
     """User identity in a webhook payload."""
+
+    model_config = ConfigDict(extra="ignore")
 
     id: int
     name: str
@@ -268,7 +294,7 @@ class WebhookUser(BaseModel):
 class VibeReceivedData(BaseModel):
     """Data payload for a vibe.received webhook event."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
     vibe_id: int = Field(alias="vibeId")
     type: str
@@ -283,7 +309,7 @@ class VibeReceivedData(BaseModel):
 class CharmReceivedData(BaseModel):
     """Data payload for a charm.received webhook event."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
     charm_id: int = Field(alias="charmId")
     emoji: str
@@ -294,7 +320,7 @@ class CharmReceivedData(BaseModel):
 class AgentWaveData(BaseModel):
     """Data payload for an agent.wave webhook event."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
     is_first_wave: bool = Field(alias="isFirstWave")
     last_interaction_at: datetime | None = Field(default=None, alias="lastInteractionAt")
@@ -303,7 +329,7 @@ class AgentWaveData(BaseModel):
 class VibeReplyData(BaseModel):
     """Data payload for a vibe.reply webhook event."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
     vibe_id: int = Field(alias="vibeId")
     type: str
@@ -323,7 +349,7 @@ class WebhookEvent(BaseModel):
     - ``vibe.reply`` -> VibeReplyData
     """
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
     event: str
     delivery_id: str = Field(alias="deliveryId")
