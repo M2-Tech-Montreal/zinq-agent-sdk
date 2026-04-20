@@ -48,6 +48,10 @@ agent = ZinqAgent()
 
 WEBHOOK_PORT = 8080
 
+# Conversation history — last 10 messages for context
+_conversation: list[dict[str, str]] = []
+MAX_HISTORY = 10
+
 
 # ── Conversation handler ──────────────────────────────────────────────────
 
@@ -125,26 +129,39 @@ def handle_message(text: str) -> str:
     )
 
     try:
+        # Build messages with conversation history
+        messages = [
+            {"role": "system", "content": (
+                "You are Sentinel, a personal monitoring assistant. You watch the user's "
+                "Gmail and Slack and keep them informed. Be concise and direct — this is "
+                "a chat message, not an essay. Use bullet points for lists.\n\n"
+                f"STATUS:\n{status}\n\n"
+                f"CURRENT DATA:\n{context}\n\n"
+                "If the user asks about emails, use the email data above. "
+                "If they ask about Slack, use the Slack data above. "
+                "If they ask to send a Slack message, say you'll send it and confirm. "
+                "If they ask to check now, say you're checking. "
+                "Keep responses short — 2-5 lines max."
+            )},
+        ]
+        # Add conversation history for context
+        messages.extend(_conversation[-MAX_HISTORY:])
+        # Add current user message
+        messages.append({"role": "user", "content": text})
+
         resp = agent.gemini.chat(
-            messages=[
-                {"role": "system", "content": (
-                    "You are Sentinel, a personal monitoring assistant. You watch the user's "
-                    "Gmail and Slack and keep them informed. Be concise and direct — this is "
-                    "a chat message, not an essay. Use bullet points for lists.\n\n"
-                    f"STATUS:\n{status}\n\n"
-                    f"CURRENT DATA:\n{context}\n\n"
-                    "If the user asks about emails, use the email data above. "
-                    "If they ask about Slack, use the Slack data above. "
-                    "If they ask to send a Slack message, say you'll send it and confirm. "
-                    "If they ask to check now, say you're checking. "
-                    "Keep responses short — 2-5 lines max."
-                )},
-                {"role": "user", "content": text},
-            ],
+            messages=messages,
             model="flash",
             max_tokens=4096,
         )
         response = resp.text
+
+        # Save to conversation history
+        _conversation.append({"role": "user", "content": text})
+        _conversation.append({"role": "assistant", "content": response})
+        # Trim history
+        while len(_conversation) > MAX_HISTORY * 2:
+            _conversation.pop(0)
 
         # If Gemini suggests sending a Slack message, try to do it
         if _should_send_slack(text, response):
