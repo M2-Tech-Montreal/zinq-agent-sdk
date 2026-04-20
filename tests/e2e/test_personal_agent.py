@@ -407,7 +407,11 @@ class TestGemini:
     def test_chat_streaming(self, agent: ZinqAgent) -> None:
         """Streaming Gemini chat returns text chunks."""
         chunks: list[str] = []
-        pytest.skip("Backend does not support streaming — returns single JSON response")
+        with pytest.raises(NotImplementedError):
+            agent.gemini.chat(
+                messages=[{"role": "user", "content": "test"}],
+                stream=True,
+            )
 
     def test_embed(self, agent: ZinqAgent) -> None:
         """Generate an embedding vector."""
