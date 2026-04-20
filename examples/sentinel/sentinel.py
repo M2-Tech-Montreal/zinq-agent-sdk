@@ -140,6 +140,19 @@ def handle_message(text: str) -> str:
     else:
         context_parts.append("SLACK: Not connected")
 
+    # Zinq data (connections, zones) — only fetch when relevant
+    if any(w in text_lower for w in ["connection", "contact", "people", "who", "friends", "zones", "clubs"]):
+        try:
+            contacts = agent.contacts.list()
+            if contacts:
+                contact_lines = "\n".join(
+                    f"- **{c.name}**{' (online)' if getattr(c, 'is_online', False) else ''}"
+                    for c in contacts[:30]
+                )
+                context_parts.append(f"ZINQ CONNECTIONS ({len(contacts)}):\n{contact_lines}")
+        except Exception as e:
+            _log("ZINQ", f"Failed to fetch contacts: {e}")
+
     context = "\n\n".join(context_parts)
 
     # Status info
