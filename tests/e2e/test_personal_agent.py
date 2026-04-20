@@ -183,6 +183,64 @@ class TestVibes:
         assert reply.vibe_id != first.vibe_id
 
 
+    def test_send_to_connection(self, agent: ZinqAgent) -> None:
+        """Send a vibe to a connection on behalf of the owner."""
+        contacts = agent.contacts.list()
+        if not contacts:
+            pytest.skip("No contacts to send to")
+        # Find a non-agent contact
+        target = None
+        for c in contacts:
+            if not getattr(c, 'is_agent', False):
+                target = c
+                break
+        if not target:
+            target = contacts[0]
+        result = agent.vibes.send_to(int(target.id), "E2E test vibe to connection -- ignore")
+        assert isinstance(result, VibeSendResult)
+        assert result.vibe_id > 0
+
+    def test_send_charm(self, agent: ZinqAgent) -> None:
+        """Send a charm to a connection on behalf of the owner."""
+        contacts = agent.contacts.list()
+        if not contacts:
+            pytest.skip("No contacts")
+        result = agent.vibes.send_charm(int(contacts[0].id), "wave")
+        assert isinstance(result, dict)
+        assert result.get("success") is True
+
+    def test_send_to_zone(self, agent: ZinqAgent) -> None:
+        """Send a vibe to a zone on behalf of the owner."""
+        zones = agent.zones.list()
+        if not zones:
+            pytest.skip("No zones")
+        # Find the first zone with an ID
+        zone = zones[0]
+        result = agent.vibes.send_to_zone(int(zone.id), "E2E test zone vibe -- ignore")
+        assert isinstance(result, VibeSendResult)
+        assert result.vibe_id > 0
+
+
+# ---------------------------------------------------------------------------
+# Profile
+# ---------------------------------------------------------------------------
+
+
+class TestProfile:
+    """Tests for agent profile management."""
+
+    def test_get_profile(self, agent: ZinqAgent) -> None:
+        """Get the agent's own profile."""
+        profile = agent.user.profile()
+        assert isinstance(profile, dict)
+        assert "name" in profile or "id" in profile
+
+    def test_update_profile(self, agent: ZinqAgent) -> None:
+        """Update the agent's bio."""
+        result = agent.user.update_profile(bio="E2E test bio")
+        assert isinstance(result, dict)
+
+
 # ---------------------------------------------------------------------------
 # Feed
 # ---------------------------------------------------------------------------
