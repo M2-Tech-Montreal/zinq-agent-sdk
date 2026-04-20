@@ -68,7 +68,7 @@ def handle_message(text: str) -> str:
 
     if all_emails:
         email_lines = "\n".join(
-            f"- {e['sender']}: {e['subject']} ({e['account']})" for e in all_emails[:15]
+            f"- {e['sender']}: {e['subject']} | {e.get('snippet', '')[:150]} ({e['account']})" for e in all_emails[:15]
         )
         context_parts.append(f"RECENT UNREAD EMAILS ({len(all_emails)}):\n{email_lines}")
     else:
@@ -114,7 +114,7 @@ def handle_message(text: str) -> str:
                 {"role": "user", "content": text},
             ],
             model="flash",
-            max_tokens=300,
+            max_tokens=4096,
         )
         response = resp.text
 
