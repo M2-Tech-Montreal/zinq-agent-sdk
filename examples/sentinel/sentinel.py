@@ -143,10 +143,28 @@ def handle_message(text: str) -> str:
             except Exception:
                 context_parts.append("RECENT SLACK DMs: Error fetching")
 
+    # Zinq feed/vibes — fetch when user asks about vibes, activity, a person, or zone
+    if any(w in text_lower for w in [
+        "vibe", "feed", "vibes", "what's happening", "what happened",
+        "activity", "summarize my", "recap", "zone", "club",
+    ]):
+        try:
+            feed = agent.feed.list(limit=20)
+            if feed:
+                feed_lines = []
+                for v in feed[:20]:
+                    name = getattr(v, 'user_name', None) or getattr(v, 'userName', None) or '?'
+                    text_preview = (getattr(v, 'text', None) or getattr(v, 'textContent', None) or '')[:100]
+                    zone = getattr(v, 'zone_label', None) or getattr(v, 'zoneLabel', None) or ''
+                    feed_lines.append(f"- **{name}** [{zone}]: {text_preview}")
+                context_parts.append(f"RECENT VIBES ({len(feed)}):\n" + "\n".join(feed_lines))
+        except Exception as e:
+            _log("ZINQ", f"Failed to fetch feed: {e}")
+
     # Zinq connections — fetch when relevant or when user wants to send/wave
     wants_zinq = any(w in text_lower for w in [
         "connection", "contact", "people", "who", "friends", "zones", "clubs",
-        "send", "wave", "vibe", "charm", "message to", "tell ",
+        "send", "wave", "charm", "message to", "tell ",
     ])
     if wants_zinq:
         try:
