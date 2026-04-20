@@ -1,0 +1,21 @@
+[Unit]
+Description=Zinq Sentinel Agent
+After=network.target
+
+[Service]
+Type=simple
+User=vm
+WorkingDirectory=/home/vm/zinq-agent-python/examples/sentinel
+ExecStart=/home/vm/zinq-agent-python/.venv/bin/python sentinel.py
+Restart=always
+RestartSec=10
+
+# API keys — edit these
+Environment=ZINQ_API_KEY=zak_your_key
+Environment=GMAIL_ACCOUNTS=you@gmail.com,work@company.com
+Environment=SLACK_BOT_TOKEN=xoxb-your-token
+# Optional
+Environment=VIP_SENDERS=boss@company.com
+
+[Install]
+WantedBy=multi-user.target
