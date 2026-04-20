@@ -836,6 +836,47 @@ class UserClient:
 
         return UserContext.model_validate(response.json())
 
+    def profile(self) -> dict:
+        """Get the agent's own profile (name, bio, avatar, etc.)."""
+        response = self._client.get("/profile")
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return response.json()
+
+    def update_profile(
+        self,
+        *,
+        name: str | None = None,
+        nickname: str | None = None,
+        bio: str | None = None,
+        avatar_url: str | None = None,
+    ) -> dict:
+        """Update the agent's own profile. Only provided fields are changed.
+
+        Args:
+            name: Display name (3-50 chars).
+            nickname: Short name.
+            bio: One-line description (max 200 chars).
+            avatar_url: Profile image URL.
+
+        Returns:
+            Updated agent profile dict.
+        """
+        body: dict[str, str] = {}
+        if name is not None:
+            body["name"] = name
+        if nickname is not None:
+            body["nickname"] = nickname
+        if bio is not None:
+            body["bio"] = bio
+        if avatar_url is not None:
+            body["avatarUrl"] = avatar_url
+
+        response = self._client.put("/profile", json=body)
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return response.json()
+
 
 # ===========================================================================
 # Resource clients (async)
@@ -1041,6 +1082,37 @@ class AsyncUserClient:
             _raise_for_status(response)
 
         return UserContext.model_validate(response.json())
+
+    async def profile(self) -> dict:
+        """Get the agent's own profile."""
+        response = await self._client.get("/profile")
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return response.json()
+
+    async def update_profile(
+        self,
+        *,
+        name: str | None = None,
+        nickname: str | None = None,
+        bio: str | None = None,
+        avatar_url: str | None = None,
+    ) -> dict:
+        """Update the agent's own profile. Only provided fields are changed."""
+        body: dict[str, str] = {}
+        if name is not None:
+            body["name"] = name
+        if nickname is not None:
+            body["nickname"] = nickname
+        if bio is not None:
+            body["bio"] = bio
+        if avatar_url is not None:
+            body["avatarUrl"] = avatar_url
+
+        response = await self._client.put("/profile", json=body)
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return response.json()
 
 
 # ===========================================================================
