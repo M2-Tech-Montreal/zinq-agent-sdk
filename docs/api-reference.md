@@ -562,6 +562,36 @@ if ctx.agent_preferences:
 
 **Returns:** [`UserContext`](#usercontext)
 
+### `user.profile() -> dict`
+
+Get the agent's own profile.
+
+```python
+profile = agent.user.profile()
+print(f"Name: {profile['name']}")
+print(f"Bio: {profile.get('bio', '')}")
+print(f"Key: {profile.get('apiKeyPrefix', '')}...")
+```
+
+### `user.update_profile(**kwargs) -> dict`
+
+Update the agent's own profile. Only provided fields are changed.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| name | str | Display name (3-50 chars) |
+| nickname | str | Short name |
+| bio | str | One-line description (max 200 chars) |
+| avatar_url | str | Profile image URL |
+
+```python
+agent.user.update_profile(
+    name="Budget Buddy",
+    bio="Tracks your spending habits",
+    nickname="BB",
+)
+```
+
 ---
 
 ## agent.gemini
