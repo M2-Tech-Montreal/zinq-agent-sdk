@@ -1,89 +1,75 @@
-# Sentinel — Email & Slack Monitor Agent
+# Sentinel — Gmail + Slack Monitoring Agent
 
-**The flagship example of what you can build with the Zinq Agent SDK.**
+Watches your Gmail and Slack, sends you Zinq vibes with summaries and urgent alerts.
 
-Sentinel watches your Gmail and Slack, sends you Zinq vibes when something important comes in, and lets you reply without leaving the app.
+## Features
 
-## What It Does
+- Gmail poll every 5 minutes — urgent emails sent as immediate vibes
+- Slack poll every 10 minutes — urgent DMs sent immediately
+- Hourly Slack summary vibe
+- Daily email digest at 8am
+- Gemini-powered summarization
+- State tracked in agent memories (no re-sends)
 
-- Checks Gmail every 5 minutes, scores importance with AI
-- Checks Slack every 2 minutes for @mentions and DMs
-- Sends you a Zinq vibe immediately for urgent items
-- Sends hourly digest summaries for everything else
-- You can ask it questions: "Any important emails?", "What's happening on Slack?"
-- You can reply through vibes: "Reply to Glenn: sounds good, Thursday works"
+## Setup
 
-## Setup (10 minutes)
-
-### 1. Create Your Agent in Zinq
-
-Open Zinq app → Settings → My Agents → Create Agent
-- Name: "Sentinel"
-- Bio: "Your email & Slack watcher"
-- Copy your API key (shown once!)
-
-### 2. Get Gmail App Password
-
-1. Go to https://myaccount.google.com/apppasswords
-2. Create app password for "Mail"
-3. Copy the 16-character password
-
-### 3. Get Slack Bot Token
-
-1. Go to https://api.slack.com/apps → Create New App
-2. Add scopes: `channels:history`, `channels:read`, `im:history`, `im:read`, `users:read`, `search:read`
-3. Install to workspace → Copy Bot Token (`xoxb-...`)
-
-### 4. Deploy
+### 1. Install dependencies
 
 ```bash
-# Install
-pip install zinq-agent slack-sdk apscheduler
+cd zinq-agent-python
+pip install -e .
+pip install apscheduler google-api-python-client google-auth-oauthlib slack-sdk
+```
 
-# Set credentials
+### 2. Create agent in Zinq app
+
+Open menu → **My Agents** → **+** → name it "Sentinel" → copy the `zak_` API key.
+
+### 3. Gmail API credentials
+
+1. Go to [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials)
+2. Enable the Gmail API
+3. Create **OAuth client ID** → **Desktop app**
+4. Download the JSON → save as `credentials.json` in this directory (or `~/gmail_secret/client_secret.json`)
+5. Add your Gmail addresses as test users in the OAuth consent screen
+
+### 4. Slack Bot Token (optional)
+
+1. Go to [api.slack.com/apps](https://api.slack.com/apps) → Create New App
+2. Add Bot Token Scopes: `channels:history`, `channels:read`, `im:history`, `im:read`, `users:read`, `search:read`
+3. Install to workspace → copy `xoxb-` token
+
+### 5. Run
+
+```bash
 export ZINQ_API_KEY=zak_your_key
-export GMAIL_USER=you@gmail.com
-export GMAIL_APP_PASSWORD=xxxx_xxxx_xxxx_xxxx
-export SLACK_BOT_TOKEN=xoxb-your-token
-
-# Run
+export GMAIL_ACCOUNTS=you@gmail.com,work@company.com
+export SLACK_BOT_TOKEN=xoxb-your-token          # optional
+export VIP_SENDERS=boss@company.com              # optional
 python sentinel.py
 ```
 
-### 5. Deploy to GCloud (free, runs 24/7)
+First run will prompt you to authorize each Gmail account — it prints a URL, you open it in any browser, sign in, paste back the code.
+
+### 6. Deploy as systemd service (runs on boot)
 
 ```bash
-gcloud compute instances create sentinel \
-  --machine-type=e2-micro --zone=us-east1-b \
-  --image-family=debian-12 --image-project=debian-cloud
-
-gcloud compute ssh sentinel
-# ... install, configure, run as systemd service
-```
-
-See `deploy-gcloud.md` for full instructions.
-
-## What You'll See in Zinq
-
-```
-Sentinel: 📬 3 new emails (last hour)
-• Glenn R. — "Dubai deal update" — 10 min ago ⚡
-• Shopify — "Your order shipped" — 25 min ago
-• Newsletter — "TechCrunch Daily" — 45 min ago
-
-Reply with a number to read, or "reply 1: [message]"
-```
-
-```
-Sentinel: 💬 Slack update
-• #dev: @you mentioned by Alex: "Can you review PR #234?"
-• DM from Sarah: "Meeting moved to 3pm"
+sudo cp sentinel.service /etc/systemd/system/
+# Edit the service file with your API keys:
+sudo nano /etc/systemd/system/sentinel.service
+sudo systemctl enable sentinel
+sudo systemctl start sentinel
 ```
 
 ## Files
 
-- `sentinel.py` — main agent (entry point)
-- `gmail_monitor.py` — Gmail IMAP polling + importance scoring
-- `slack_monitor.py` — Slack API polling
-- `classifier.py` — AI importance scoring via Gemini
-- `deploy-gcloud.md` — GCloud deployment guide
+| File | What |
+|------|------|
+| `sentinel.py` | Main entry point — scheduler + job definitions |
+| `gmail_monitor.py` | Gmail API with OAuth, fetch unread, classify urgency |
+| `slack_monitor.py` | Slack DMs + mentions polling |
+| `summarizer.py` | Gemini-powered email/Slack summarization |
+| `config.py` | Env-based configuration (poll intervals, keywords) |
+| `sentinel.service` | Systemd unit file |
+| `requirements.txt` | Python dependencies |
+| `PROMPT.md` | Claude Code prompt to build this from scratch |
