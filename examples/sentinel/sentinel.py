@@ -61,24 +61,44 @@ def handle_message(text: str) -> str:
     # Gather context for Gemini
     context_parts = []
 
-    # Check if user is asking about a specific person/topic — search for it
+    # Check if user is asking about a specific person/topic — use Gemini to extract search params
     search_results = []
     text_lower = text.lower()
-    # Extract potential search terms (names, subjects) using simple heuristics
-    search_triggers = ["from ", "email from ", "message from ", "about ", "regarding "]
-    search_query = None
-    for trigger in search_triggers:
-        if trigger in text_lower:
-            search_query = text[text_lower.index(trigger) + len(trigger):].strip().rstrip("?.")
-            break
+    needs_search = any(w in text_lower for w in [
+        "email", "from ", "message from", "about ", "regarding ",
+        "anything from", "hear from", "did ", "find ",
+    ])
 
-    if search_query:
-        for account in config.GMAIL_ACCOUNTS:
-            try:
-                results = search_emails(account, f"from:{search_query} OR subject:{search_query}", max_results=5)
-                search_results.extend(results)
-            except Exception:
-                pass
+    if needs_search:
+        # Use Gemini to extract Gmail search query
+        try:
+            extract = agent.gemini.chat(
+                messages=[{"role": "user", "content": (
+                    "Extract a Gmail search query from this request. "
+                    "Reply with ONLY the Gmail query string, nothing else.\n"
+                    "Use Gmail syntax: from:name, newer_than:2d, subject:topic, etc.\n"
+                    "Examples:\n"
+                    "  'emails from Dan in the last 2 days' → 'from:Dan newer_than:2d'\n"
+                    "  'anything about the Bell account' → 'subject:Bell OR from:Bell'\n"
+                    "  'recent emails from Sarah' → 'from:Sarah newer_than:7d'\n"
+                    f"\nRequest: {text}"
+                )}],
+                model="flash",
+                max_tokens=50,
+            )
+            search_query = extract.text.strip().strip('"').strip("'")
+            _log("SEARCH", f"Extracted Gmail query: {search_query}")
+        except Exception as e:
+            _log("SEARCH", f"Query extraction failed: {e}")
+            search_query = None
+
+        if search_query:
+            for account in config.GMAIL_ACCOUNTS:
+                try:
+                    results = search_emails(account, search_query, max_results=5)
+                    search_results.extend(results)
+                except Exception:
+                    pass
 
         if search_results:
             search_lines = []
