@@ -143,26 +143,34 @@ def handle_message(text: str) -> str:
             except Exception:
                 context_parts.append("RECENT SLACK DMs: Error fetching")
 
-    # Zinq data (connections, zones) — only fetch when relevant
-    if any(w in text_lower for w in ["connection", "contact", "people", "who", "friends", "zones", "clubs"]):
+    # Zinq connections — fetch when relevant or when user wants to send/wave
+    wants_zinq = any(w in text_lower for w in [
+        "connection", "contact", "people", "who", "friends", "zones", "clubs",
+        "send", "wave", "vibe", "charm", "message to", "tell ",
+    ])
+    if wants_zinq:
         try:
             contacts = agent.contacts.list()
             if contacts:
                 contact_lines = "\n".join(
-                    f"- **{c.name}**{' (online)' if getattr(c, 'is_online', False) else ''}"
+                    f"- **{c.name}** (id:{c.id}){' (online)' if getattr(c, 'is_online', False) else ''}"
                     for c in contacts[:30]
                 )
                 context_parts.append(f"ZINQ CONNECTIONS ({len(contacts)}):\n{contact_lines}")
         except Exception as e:
             _log("ZINQ", f"Failed to fetch contacts: {e}")
 
-    # Zinq data (connections, zones) — only fetch when relevant
-    if any(w in text_lower for w in ["connection", "contact", "people", "who", "friends", "zones", "clubs"]):
+    # Zinq connections — fetch when relevant or when user wants to send/wave
+    wants_zinq = any(w in text_lower for w in [
+        "connection", "contact", "people", "who", "friends", "zones", "clubs",
+        "send", "wave", "vibe", "charm", "message to", "tell ",
+    ])
+    if wants_zinq:
         try:
             contacts = agent.contacts.list()
             if contacts:
                 contact_lines = "\n".join(
-                    f"- **{c.name}**{' (online)' if getattr(c, 'is_online', False) else ''}"
+                    f"- **{c.name}** (id:{c.id}){' (online)' if getattr(c, 'is_online', False) else ''}"
                     for c in contacts[:30]
                 )
                 context_parts.append(f"ZINQ CONNECTIONS ({len(contacts)}):\n{contact_lines}")
@@ -194,7 +202,13 @@ def handle_message(text: str) -> str:
                 "If they ask to send a Slack message, do it and confirm. "
                 "Be conversational, not robotic. "
                 "Format responses in Markdown — use **bold** for names and key info, "
-                "bullet points for lists, and `code` for amounts/dates."
+                "bullet points for lists, and `code` for amounts/dates.\n\n"
+                "ACTIONS YOU CAN TAKE:\n"
+                "- Send vibes to connections: reply with SEND_VIBE:userId:message\n"
+                "- Send charms (wave, heart, thumbs_up): reply with SEND_CHARM:userId:charmType\n"
+                "When the user says 'send X a message' or 'wave at Y', match the name "
+                "from ZINQ CONNECTIONS, extract the action, and include the action tag. "
+                "Always confirm what you did."
             )},
         ]
         # Add conversation history for context
@@ -215,6 +229,34 @@ def handle_message(text: str) -> str:
         # Trim history
         while len(_conversation) > MAX_HISTORY * 2:
             _conversation.pop(0)
+
+        # Execute any actions Gemini tagged in the response
+        if "SEND_VIBE:" in response:
+            for line in response.split("\n"):
+                if "SEND_VIBE:" in line:
+                    try:
+                        parts = line.split("SEND_VIBE:")[1].split(":", 1)
+                        uid = int(parts[0].strip())
+                        msg = parts[1].strip() if len(parts) > 1 else ""
+                        agent.vibes.send_to(uid, msg)
+                        _log("ACTION", f"Sent vibe to user {uid}")
+                    except Exception as e:
+                        _log("ACTION", f"Failed to send vibe: {e}")
+            # Remove action tags from response
+            response = "\n".join(l for l in response.split("\n") if "SEND_VIBE:" not in l).strip()
+
+        if "SEND_CHARM:" in response:
+            for line in response.split("\n"):
+                if "SEND_CHARM:" in line:
+                    try:
+                        parts = line.split("SEND_CHARM:")[1].split(":", 1)
+                        uid = int(parts[0].strip())
+                        charm = parts[1].strip() if len(parts) > 1 else "wave"
+                        agent.vibes.send_charm(uid, charm)
+                        _log("ACTION", f"Sent charm '{charm}' to user {uid}")
+                    except Exception as e:
+                        _log("ACTION", f"Failed to send charm: {e}")
+            response = "\n".join(l for l in response.split("\n") if "SEND_CHARM:" not in l).strip()
 
         # If Gemini suggests sending a Slack message, try to do it
         if _should_send_slack(text, response):
