@@ -49,131 +49,165 @@ agent = ZinqAgent()
 WEBHOOK_PORT = 8080
 
 
-# ── Command handler ──────────────────────────────────────────────────────
+# ── Conversation handler ──────────────────────────────────────────────────
 
-def handle_command(text: str) -> str:
-    """Handle a command from the user via vibe. Returns response text."""
-    text = text.strip().lower()
+def handle_message(text: str) -> str:
+    """Handle a natural language message from the user via Gemini."""
 
-    if text in ("last emails", "recent emails", "last 10 emails", "emails"):
-        return _cmd_recent_emails(10)
+    # Gather context for Gemini
+    context_parts = []
 
-    if text in ("last slack", "recent slack", "last 10 slack", "slack", "slack messages"):
-        return _cmd_recent_slack(10)
-
-    if text in ("status", "ping"):
-        return _cmd_status()
-
-    if text.startswith("send slack ") or text.startswith("slack send "):
-        # "send slack #channel message" or "send slack @user message"
-        return _cmd_send_slack(text)
-
-    if text in ("digest", "email digest"):
-        email_digest()
-        return "Digest sent."
-
-    if text in ("check", "check now"):
-        check_gmail()
-        check_slack()
-        return "Checked Gmail and Slack."
-
-    return (
-        "Commands:\n"
-        "• last emails — recent 10 emails\n"
-        "• last slack — recent 10 Slack messages\n"
-        "• send slack #channel message\n"
-        "• send slack @user message\n"
-        "• digest — send email digest now\n"
-        "• check — check Gmail + Slack now\n"
-        "• status — show agent status"
-    )
-
-
-def _cmd_recent_emails(count: int) -> str:
+    # Recent emails
     all_emails = []
     for account in config.GMAIL_ACCOUNTS:
-        emails = fetch_unread(account)
-        all_emails.extend(emails[:count])
+        try:
+            emails = fetch_unread(account)
+            all_emails.extend(emails[:10])
+        except Exception:
+            pass
 
-    if not all_emails:
-        return "No unread emails."
+    if all_emails:
+        email_lines = "\n".join(
+            f"- {e['sender']}: {e['subject']} ({e['account']})" for e in all_emails[:15]
+        )
+        context_parts.append(f"RECENT UNREAD EMAILS ({len(all_emails)}):\n{email_lines}")
+    else:
+        context_parts.append("RECENT UNREAD EMAILS: None")
 
-    lines = []
-    for e in all_emails[:count]:
-        lines.append(f"• {e['sender']}: {e['subject']}")
-    return f"{len(lines)} recent emails:\n" + "\n".join(lines)
+    # Recent Slack DMs
+    if config.SLACK_BOT_TOKEN:
+        try:
+            dms = fetch_dms()
+            if dms:
+                dm_lines = "\n".join(f"- {d['user']}: {d['text'][:100]}" for d in dms[:10])
+                context_parts.append(f"RECENT SLACK DMs ({len(dms)}):\n{dm_lines}")
+            else:
+                context_parts.append("RECENT SLACK DMs: None")
+        except Exception:
+            context_parts.append("RECENT SLACK DMs: Error fetching")
+    else:
+        context_parts.append("SLACK: Not connected")
 
+    context = "\n\n".join(context_parts)
 
-def _cmd_recent_slack(count: int) -> str:
-    if not config.SLACK_BOT_TOKEN:
-        return "Slack not configured."
-
-    dms = fetch_dms()
-    if not dms:
-        return "No recent Slack messages."
-
-    lines = []
-    for d in dms[:count]:
-        lines.append(f"• {d['user']}: {d['text'][:80]}")
-    return f"{len(lines)} recent Slack messages:\n" + "\n".join(lines)
-
-
-def _cmd_status() -> str:
-    parts = [
-        "Sentinel status: ONLINE",
-        f"Gmail accounts: {', '.join(config.GMAIL_ACCOUNTS) or 'none'}",
-        f"Slack: {'connected' if config.SLACK_BOT_TOKEN else 'disabled'}",
-    ]
-    return "\n".join(parts)
-
-
-def _cmd_send_slack(text: str) -> str:
-    """Parse 'send slack #channel message' or 'send slack @user message'."""
-    if not config.SLACK_BOT_TOKEN:
-        return "Slack not configured."
-
-    # Remove the "send slack " or "slack send " prefix
-    for prefix in ("send slack ", "slack send "):
-        if text.startswith(prefix):
-            text = text[len(prefix):]
-            break
-
-    parts = text.split(" ", 1)
-    if len(parts) < 2:
-        return "Usage: send slack #channel message"
-
-    target = parts[0]
-    message = parts[1]
+    # Status info
+    status = (
+        f"Gmail accounts: {', '.join(config.GMAIL_ACCOUNTS) or 'none'}\n"
+        f"Slack: {'connected' if config.SLACK_BOT_TOKEN else 'not connected'}"
+    )
 
     try:
+        resp = agent.gemini.chat(
+            messages=[
+                {"role": "system", "content": (
+                    "You are Sentinel, a personal monitoring assistant. You watch the user's "
+                    "Gmail and Slack and keep them informed. Be concise and direct — this is "
+                    "a chat message, not an essay. Use bullet points for lists.\n\n"
+                    f"STATUS:\n{status}\n\n"
+                    f"CURRENT DATA:\n{context}\n\n"
+                    "If the user asks about emails, use the email data above. "
+                    "If they ask about Slack, use the Slack data above. "
+                    "If they ask to send a Slack message, say you'll send it and confirm. "
+                    "If they ask to check now, say you're checking. "
+                    "Keep responses short — 2-5 lines max."
+                )},
+                {"role": "user", "content": text},
+            ],
+            model="flash",
+            max_tokens=300,
+        )
+        response = resp.text
+
+        # If Gemini suggests sending a Slack message, try to do it
+        if _should_send_slack(text, response):
+            slack_result = _try_send_slack(text)
+            if slack_result:
+                response += f"\n\n{slack_result}"
+
+        # If user wants a fresh check, do it
+        text_lower = text.lower()
+        if any(w in text_lower for w in ["check now", "refresh", "check again", "look now"]):
+            check_gmail()
+            check_slack()
+
+        return response
+
+    except Exception as e:
+        _log("GEMINI", f"Error: {e}")
+        # Fallback: just show the data directly
+        return f"Here's what I have:\n\n{context}"
+
+
+def _should_send_slack(user_text: str, ai_response: str) -> bool:
+    """Detect if the user wants to send a Slack message."""
+    text = user_text.lower()
+    return any(w in text for w in [
+        "tell ", "message ", "send ", "dm ", "slack ",
+        "let them know", "reply to", "write to",
+    ])
+
+
+def _try_send_slack(text: str) -> str | None:
+    """Try to extract and send a Slack message from natural language."""
+    if not config.SLACK_BOT_TOKEN:
+        return None
+
+    # Use Gemini to extract the target and message
+    try:
+        resp = agent.gemini.chat(
+            messages=[
+                {"role": "system", "content": (
+                    "Extract the Slack recipient and message from the user's text. "
+                    "Reply with EXACTLY this format, nothing else:\n"
+                    "TO: channel_name or user_name\n"
+                    "MSG: the message\n\n"
+                    "If you can't extract both, reply with: SKIP"
+                )},
+                {"role": "user", "content": text},
+            ],
+            model="flash",
+            max_tokens=100,
+        )
+
+        lines = resp.text.strip().split("\n")
+        if resp.text.strip() == "SKIP" or len(lines) < 2:
+            return None
+
+        target = None
+        message = None
+        for line in lines:
+            if line.startswith("TO:"):
+                target = line[3:].strip().lstrip("#@")
+            elif line.startswith("MSG:"):
+                message = line[4:].strip()
+
+        if not target or not message:
+            return None
+
         from slack_sdk import WebClient
         client = WebClient(token=config.SLACK_BOT_TOKEN)
 
-        if target.startswith("#"):
-            # Channel message
-            channel = target[1:]
-            client.chat_postMessage(channel=channel, text=message)
-            return f"Sent to #{channel}"
-        elif target.startswith("@"):
-            # DM — need to open a conversation first
-            username = target[1:]
-            # Find user by name
-            users = client.users_list()
-            user_id = None
-            for u in users["members"]:
-                if u.get("name") == username or u.get("real_name", "").lower() == username.lower():
-                    user_id = u["id"]
-                    break
-            if not user_id:
-                return f"User {target} not found"
-            conv = client.conversations_open(users=[user_id])
-            client.chat_postMessage(channel=conv["channel"]["id"], text=message)
-            return f"DM sent to {target}"
-        else:
-            return f"Target must start with # or @. Got: {target}"
+        # Try as channel first, then as DM
+        try:
+            client.chat_postMessage(channel=f"#{target}", text=message)
+            return f"Sent to #{target}"
+        except Exception:
+            # Try as DM
+            try:
+                users = client.users_list()
+                for u in users["members"]:
+                    if u.get("name") == target or (u.get("real_name") or "").lower() == target.lower():
+                        conv = client.conversations_open(users=[u["id"]])
+                        client.chat_postMessage(channel=conv["channel"]["id"], text=message)
+                        return f"DM sent to {target}"
+            except Exception:
+                pass
+
+        return None
 
     except Exception as e:
-        return f"Slack send failed: {e}"
+        _log("SLACK-SEND", f"Error: {e}")
+        return None
 
 
 # ── Webhook server ───────────────────────────────────────────────────────
@@ -194,13 +228,13 @@ class WebhookHandler(BaseHTTPRequestHandler):
                 _log("WEBHOOK", f"Command: {text}")
 
                 if text.strip():
-                    response_text = handle_command(text)
+                    response_text = handle_message(text)
                     agent.vibes.send(text=response_text)
                     _log("WEBHOOK", f"Responded: {response_text[:60]}")
 
             elif event_type == "agent.wave":
                 # User opened the agent chat
-                agent.vibes.send(text="Sentinel here. Type 'help' for commands.")
+                agent.vibes.send(text="Sentinel here. What do you need?")
 
         except Exception as e:
             _log("WEBHOOK", f"Error: {e}")
@@ -403,11 +437,7 @@ def main():
         _log("SENTINEL", f"Failed to register webhook (non-fatal): {e}")
 
     # Send startup vibe
-    agent.vibes.send(text=(
-        "Sentinel is online.\n\n"
-        "Commands: last emails, last slack, send slack #channel msg, "
-        "digest, check, status"
-    ))
+    agent.vibes.send(text="Sentinel is online. Watching your email and Slack.")
 
     # Start webhook server in background thread
     webhook_thread = threading.Thread(target=start_webhook_server, daemon=True)
