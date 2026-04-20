@@ -50,9 +50,8 @@ def get_gmail_service(account: str):
                 _log(f"No credentials file found — cannot auth {account}")
                 return None
             flow = InstalledAppFlow.from_client_secrets_file(str(creds_file), SCOPES)
-            # Console-based auth — prints a URL, you paste back the code
-            _log(f"Authorizing {account} — open the URL below in any browser:")
-            creds = flow.run_console()
+            _log(f"Authorizing {account} — a browser will open (or use the URL printed):")
+            creds = flow.run_local_server(port=0, open_browser=False)
 
         token_file.write_text(creds.to_json())
 
