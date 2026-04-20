@@ -360,6 +360,32 @@ class VibeClient:
 
         return VibeSendResult.model_validate(response.json())
 
+    def send_to(self, recipient_user_id: int, text: str) -> VibeSendResult:
+        """Send a vibe from the owner to a specific connection (on their behalf).
+
+        Args:
+            recipient_user_id: The user ID of the connection to send to.
+            text: The vibe text content.
+        """
+        body = {"textContent": text, "recipientUserId": recipient_user_id}
+        response = self._client.post("/vibes/send-to", json=body)
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return VibeSendResult.model_validate(response.json())
+
+    def send_charm(self, target_user_id: int, charm_type: str = "wave") -> dict:
+        """Send a charm from the owner to a connection (on their behalf).
+
+        Args:
+            target_user_id: The user ID to send the charm to.
+            charm_type: Type of charm (wave, thumbs_up, heart, etc.)
+        """
+        body = {"targetUserId": target_user_id, "charmType": charm_type}
+        response = self._client.post("/charms/send", json=body)
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return response.json()
+
     def received(
         self,
         *,
