@@ -235,6 +235,63 @@ class AgentLifecycleClient:
         data = response.json()
         return data.get("yaml", "")
 
+    def validate(self, yaml: str) -> dict:
+        """Validate YAML structurally. Returns {valid, errors, warnings}.
+
+        Checks syntax, required fields, types, and constraints without
+        using AI. Fast and deterministic.
+
+        Args:
+            yaml: The YAML agent definition string to validate.
+
+        Returns:
+            Dict with: valid (bool), errors (list[str]), warnings (list[str]).
+        """
+        response = self._client.post("/agent/validate", json={"yaml": yaml})
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return response.json()
+
+    def review(self, yaml: str) -> dict:
+        """AI quality review. Returns {score, issues, suggestions}.
+
+        Sends the YAML to an AI reviewer that scores the definition
+        from 1-10 and provides actionable feedback.
+
+        Args:
+            yaml: The YAML agent definition string to review.
+
+        Returns:
+            Dict with: score (int, 1-10), issues (list[str]),
+            suggestions (list[str]).
+        """
+        response = self._client.post("/agent/review", json={"yaml": yaml})
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return response.json()
+
+    def refine(self, yaml: str, feedback: str) -> dict:
+        """Refine YAML based on feedback. Returns {yaml, summary, changes}.
+
+        Sends the existing YAML and user feedback to AI, which returns
+        an improved version with a summary of what changed.
+
+        Args:
+            yaml: The existing YAML agent definition string.
+            feedback: Natural language description of desired changes
+                      (e.g., "add a delivery tracking tool" or
+                      "make the tone more casual").
+
+        Returns:
+            Dict with: yaml (str), summary (dict), changes (list[str]).
+        """
+        response = self._client.post(
+            "/agent/refine", json={"yaml": yaml, "feedback": feedback}
+        )
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return response.json()
+
 
 class MarketplaceUsersClient:
     """View pseudonymous user info for your marketplace agent.
