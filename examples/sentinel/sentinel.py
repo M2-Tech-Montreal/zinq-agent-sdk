@@ -157,11 +157,13 @@ def handle_message(text: str) -> str:
                 "a chat message, not an essay. Use bullet points for lists.\n\n"
                 f"STATUS:\n{status}\n\n"
                 f"CURRENT DATA:\n{context}\n\n"
-                "If the user asks about emails, use the email data above. "
-                "If they ask about Slack, use the Slack data above. "
-                "If they ask to send a Slack message, say you'll send it and confirm. "
-                "If they ask to check now, say you're checking. "
-                "Keep responses short — 2-5 lines max."
+                "When the user asks about emails, SUMMARIZE the content — don't just "
+                "list sender and subject. Pull out the key info from the email body: "
+                "what they want, what's the action item, any deadlines or amounts. "
+                "If there's a long email, give the TL;DR and ask if they want details. "
+                "When they ask about Slack, summarize the conversations. "
+                "If they ask to send a Slack message, do it and confirm. "
+                "Be conversational, not robotic."
             )},
         ]
         # Add conversation history for context
