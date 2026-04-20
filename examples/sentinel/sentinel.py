@@ -109,36 +109,52 @@ def handle_message(text: str) -> str:
                 )
             context_parts.append(f"SEARCH RESULTS FOR '{search_query}' ({len(search_results)} found):\n" + "\n".join(search_lines))
 
-    # Recent unread emails
-    all_emails = []
-    for account in config.GMAIL_ACCOUNTS:
-        try:
-            emails = fetch_unread(account)
-            all_emails.extend(emails[:10])
-        except Exception:
-            pass
+    # Only fetch email/slack when the question is about them
+    wants_email = any(w in text_lower for w in ["email", "mail", "inbox", "unread", "digest", "check"])
+    wants_slack = any(w in text_lower for w in ["slack", "dm", "message", "channel", "mention"])
+    wants_general = any(w in text_lower for w in ["what's new", "anything new", "update", "status", "what do i have"])
 
-    if all_emails:
-        email_lines = "\n".join(
-            f"- {e['sender']}: {e['subject']} | {e.get('snippet', '')[:150]} ({e['account']})" for e in all_emails[:15]
-        )
-        context_parts.append(f"RECENT UNREAD EMAILS ({len(all_emails)}):\n{email_lines}")
-    else:
-        context_parts.append("RECENT UNREAD EMAILS: None")
+    if wants_email or wants_general or needs_search:
+        all_emails = []
+        for account in config.GMAIL_ACCOUNTS:
+            try:
+                emails = fetch_unread(account)
+                all_emails.extend(emails[:10])
+            except Exception:
+                pass
 
-    # Recent Slack DMs
-    if config.SLACK_BOT_TOKEN:
+        if all_emails:
+            email_lines = "\n".join(
+                f"- {e['sender']}: {e['subject']} | {e.get('snippet', '')[:150]} ({e['account']})" for e in all_emails[:15]
+            )
+            context_parts.append(f"RECENT UNREAD EMAILS ({len(all_emails)}):\n{email_lines}")
+        else:
+            context_parts.append("RECENT UNREAD EMAILS: None")
+
+    if wants_slack or wants_general:
+        if config.SLACK_BOT_TOKEN:
+            try:
+                dms = fetch_dms()
+                if dms:
+                    dm_lines = "\n".join(f"- {d['user']}: {d['text'][:100]}" for d in dms[:10])
+                    context_parts.append(f"RECENT SLACK DMs ({len(dms)}):\n{dm_lines}")
+                else:
+                    context_parts.append("RECENT SLACK DMs: None")
+            except Exception:
+                context_parts.append("RECENT SLACK DMs: Error fetching")
+
+    # Zinq data (connections, zones) — only fetch when relevant
+    if any(w in text_lower for w in ["connection", "contact", "people", "who", "friends", "zones", "clubs"]):
         try:
-            dms = fetch_dms()
-            if dms:
-                dm_lines = "\n".join(f"- {d['user']}: {d['text'][:100]}" for d in dms[:10])
-                context_parts.append(f"RECENT SLACK DMs ({len(dms)}):\n{dm_lines}")
-            else:
-                context_parts.append("RECENT SLACK DMs: None")
-        except Exception:
-            context_parts.append("RECENT SLACK DMs: Error fetching")
-    else:
-        context_parts.append("SLACK: Not connected")
+            contacts = agent.contacts.list()
+            if contacts:
+                contact_lines = "\n".join(
+                    f"- **{c.name}**{' (online)' if getattr(c, 'is_online', False) else ''}"
+                    for c in contacts[:30]
+                )
+                context_parts.append(f"ZINQ CONNECTIONS ({len(contacts)}):\n{contact_lines}")
+        except Exception as e:
+            _log("ZINQ", f"Failed to fetch contacts: {e}")
 
     # Zinq data (connections, zones) — only fetch when relevant
     if any(w in text_lower for w in ["connection", "contact", "people", "who", "friends", "zones", "clubs"]):
