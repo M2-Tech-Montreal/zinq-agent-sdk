@@ -177,6 +177,20 @@ def handle_message(text: str) -> str:
         except Exception as e:
             _log("ZINQ", f"Failed to fetch contacts: {e}")
 
+    # Billing/credits — fetch when relevant
+    if any(w in text_lower for w in ["credit", "usage", "billing", "cost", "spent", "left", "remaining"]):
+        try:
+            credits = agent.billing.credits()
+            context_parts.append(
+                f"BILLING:\n"
+                f"- Credits used: {credits.get('creditsUsed', '?')}\n"
+                f"- Credits remaining: {credits.get('creditsRemaining', '?')}\n"
+                f"- Weekly limit: {credits.get('weeklyLimit', '?')}\n"
+                f"- Tier: {credits.get('tier', '?')}"
+            )
+        except Exception as e:
+            _log("BILLING", f"Failed to fetch credits: {e}")
+
     context = "\n\n".join(context_parts)
 
     # Status info
