@@ -176,7 +176,13 @@ class DiaryClient:
         if response.status_code != 200:
             _raise_for_status(response)
 
-        return DiaryPage.model_validate(response.json())
+        data = response.json()
+        page_obj = DiaryPage.model_validate(data)
+        # Compute total_pages from total entries and page size if not provided
+        if page_obj.total_pages == 0 and page_obj.total_entries > 0:
+            page_size = data.get("size", size)
+            page_obj.total_pages = (page_obj.total_entries + page_size - 1) // page_size
+        return page_obj
 
     def iter(
         self,
@@ -248,7 +254,7 @@ class DiaryClient:
         Returns:
             Dict with vibe_id of the created diary entry.
         """
-        body: dict[str, Any] = {"text": text}
+        body: dict[str, Any] = {"textContent": text}
         if mood_score is not None:
             body["moodScore"] = mood_score
 
@@ -329,7 +335,7 @@ class VibeClient:
             VibeSendResult with vibe_id, delivered_at, and push_sent.
         """
         body: dict[str, Any] = {
-            "text": text,
+            "textContent": text,
             "type": vibe_type,
         }
 
@@ -408,16 +414,15 @@ class MemoryClient:
         Returns:
             List of Memory objects.
         """
-        params: dict[str, Any] = {}
-        if category is not None:
-            params["category"] = category
-
-        response = self._client.get("/memories", params=params)
+        response = self._client.get("/memories")
         if response.status_code != 200:
             _raise_for_status(response)
 
         data = response.json()
-        return [Memory.model_validate(m) for m in data.get("memories", [])]
+        memories = [Memory.model_validate(m) for m in data.get("memories", [])]
+        if category is not None:
+            memories = [m for m in memories if m.category == category]
+        return memories
 
     def get(self, key: str) -> Memory | None:
         """Get a specific memory by key.
@@ -428,8 +433,7 @@ class MemoryClient:
         Returns:
             Memory object if found, None otherwise.
         """
-        params = {"key": key}
-        response = self._client.get("/memories", params=params)
+        response = self._client.get("/memories")
         if response.status_code == 404:
             return None
         if response.status_code != 200:
@@ -437,9 +441,10 @@ class MemoryClient:
 
         data = response.json()
         memories = data.get("memories", [])
-        if not memories:
-            return None
-        return Memory.model_validate(memories[0])
+        for m in memories:
+            if m.get("key") == key:
+                return Memory.model_validate(m)
+        return None
 
     def save(
         self,
@@ -837,7 +842,13 @@ class AsyncDiaryClient:
         if response.status_code != 200:
             _raise_for_status(response)
 
-        return DiaryPage.model_validate(response.json())
+        data = response.json()
+        page_obj = DiaryPage.model_validate(data)
+        # Compute total_pages from total entries and page size if not provided
+        if page_obj.total_pages == 0 and page_obj.total_entries > 0:
+            page_size = data.get("size", size)
+            page_obj.total_pages = (page_obj.total_entries + page_size - 1) // page_size
+        return page_obj
 
     async def search(
         self,
@@ -879,7 +890,7 @@ class AsyncVibeClient:
         metadata: dict[str, Any] | None = None,
     ) -> VibeSendResult:
         """Send a vibe (message) from the agent to the user."""
-        body: dict[str, Any] = {"text": text, "type": vibe_type}
+        body: dict[str, Any] = {"textContent": text, "type": vibe_type}
 
         interactive: dict[str, Any] = {}
         if input_type is not None:
@@ -932,21 +943,19 @@ class AsyncMemoryClient:
 
     async def list(self, *, category: str | None = None) -> list[Memory]:
         """List all memories, optionally filtered by category."""
-        params: dict[str, Any] = {}
-        if category is not None:
-            params["category"] = category
-
-        response = await self._client.get("/memories", params=params)
+        response = await self._client.get("/memories")
         if response.status_code != 200:
             _raise_for_status(response)
 
         data = response.json()
-        return [Memory.model_validate(m) for m in data.get("memories", [])]
+        memories = [Memory.model_validate(m) for m in data.get("memories", [])]
+        if category is not None:
+            memories = [m for m in memories if m.category == category]
+        return memories
 
     async def get(self, key: str) -> Memory | None:
         """Get a specific memory by key."""
-        params = {"key": key}
-        response = await self._client.get("/memories", params=params)
+        response = await self._client.get("/memories")
         if response.status_code == 404:
             return None
         if response.status_code != 200:
@@ -954,9 +963,10 @@ class AsyncMemoryClient:
 
         data = response.json()
         memories = data.get("memories", [])
-        if not memories:
-            return None
-        return Memory.model_validate(memories[0])
+        for m in memories:
+            if m.get("key") == key:
+                return Memory.model_validate(m)
+        return None
 
     async def save(
         self, key: str, value: str, *, category: str | None = None
