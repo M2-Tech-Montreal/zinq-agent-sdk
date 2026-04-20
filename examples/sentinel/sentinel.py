@@ -30,7 +30,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from zinq_agent import ZinqAgent
 
 import config
-from gmail_monitor import fetch_unread, classify_urgency
+from gmail_monitor import fetch_unread, classify_urgency, search_emails
 from slack_monitor import fetch_dms, fetch_mentions, is_urgent_dm
 from summarizer import (
     summarize_emails,
@@ -57,7 +57,35 @@ def handle_message(text: str) -> str:
     # Gather context for Gemini
     context_parts = []
 
-    # Recent emails
+    # Check if user is asking about a specific person/topic — search for it
+    search_results = []
+    text_lower = text.lower()
+    # Extract potential search terms (names, subjects) using simple heuristics
+    search_triggers = ["from ", "email from ", "message from ", "about ", "regarding "]
+    search_query = None
+    for trigger in search_triggers:
+        if trigger in text_lower:
+            search_query = text[text_lower.index(trigger) + len(trigger):].strip().rstrip("?.")
+            break
+
+    if search_query:
+        for account in config.GMAIL_ACCOUNTS:
+            try:
+                results = search_emails(account, f"from:{search_query} OR subject:{search_query}", max_results=5)
+                search_results.extend(results)
+            except Exception:
+                pass
+
+        if search_results:
+            search_lines = []
+            for e in search_results[:5]:
+                body_preview = e.get('body', e.get('snippet', ''))[:500]
+                search_lines.append(
+                    f"- FROM: {e['sender']}\n  SUBJECT: {e['subject']}\n  DATE: {e['date']}\n  BODY: {body_preview}\n"
+                )
+            context_parts.append(f"SEARCH RESULTS FOR '{search_query}' ({len(search_results)} found):\n" + "\n".join(search_lines))
+
+    # Recent unread emails
     all_emails = []
     for account in config.GMAIL_ACCOUNTS:
         try:
