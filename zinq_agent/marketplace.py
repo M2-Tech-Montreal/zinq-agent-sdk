@@ -758,7 +758,7 @@ class ZinqMarketplaceAdmin:
         self.base_url = base_url
 
         self._client = httpx.Client(
-            base_url=f"{base_url}/marketplace-admin",
+            base_url=f"{base_url}/marketplace/admin",
             headers={
                 "X-Agent-Key": self.api_key,
                 "Content-Type": "application/json",
