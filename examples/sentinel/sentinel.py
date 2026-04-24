@@ -595,18 +595,28 @@ def main():
         _log("SENTINEL", "ERROR: No GMAIL_ACCOUNTS or SLACK_BOT_TOKEN set")
         sys.exit(1)
 
-    # Register webhook URL with the agent
+    # Set agent profile and register webhook
     webhook_url = f"http://34.58.243.153:{WEBHOOK_PORT}/webhook"
     try:
+        agent.user.update_profile(
+            name="Sentinel",
+            nickname="Sentinel",
+            bio="Watches your email and Slack. Sends you urgent messages and daily digests.",
+            avatar_url="gs://zinq-app-media/avatars/agents/sentinel.png",
+        )
+        _log("SENTINEL", "Profile set: Sentinel")
+    except Exception as e:
+        _log("SENTINEL", f"Profile update failed (non-fatal): {e}")
+    try:
         import httpx
-        r = httpx.put(
+        httpx.put(
             f"https://zinq-app.com/api/agent-api/profile",
             headers={"X-Agent-Key": config.ZINQ_API_KEY},
             json={"webhookUrl": webhook_url},
         )
         _log("SENTINEL", f"Webhook registered: {webhook_url}")
     except Exception as e:
-        _log("SENTINEL", f"Failed to register webhook (non-fatal): {e}")
+        _log("SENTINEL", f"Webhook registration failed (non-fatal): {e}")
 
     # Send startup vibe
     agent.vibes.send(text="Sentinel is online. Watching your email and Slack.")
