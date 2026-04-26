@@ -1,4 +1,6 @@
 """
+⚠️  REFERENCE CODE — not tested end-to-end. See examples/sentinel/ and examples/rosas_bakery/ for working agents.
+
 Trading Agent — Monitor your crypto portfolio and get AI-powered alerts.
 
 Connects to Binance (or any exchange via CCXT), watches your positions,

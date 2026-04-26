@@ -1,4 +1,6 @@
-"""Echo Bot -- the simplest possible Zinq agent.
+"""
+⚠️  REFERENCE CODE — not tested end-to-end. See examples/sentinel/ and examples/rosas_bakery/ for working agents.
+Echo Bot -- the simplest possible Zinq agent.
 
 Echoes back whatever the user says. Demonstrates:
 - Receiving vibes via webhook

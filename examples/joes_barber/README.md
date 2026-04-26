@@ -1,3 +1,5 @@
+> **⚠️ Reference Code** — This example has not been tested end-to-end. For working agents, see [`sentinel/`](../sentinel/) and [`rosas_bakery/`](../rosas_bakery/).
+
 # Joe's Barber Shop
 
 A complete marketplace agent example for a barber shop. Customers book haircuts, check availability, and cancel appointments -- all through chat on Zinq.

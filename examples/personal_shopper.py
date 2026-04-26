@@ -1,4 +1,6 @@
-"""Personal Shopper -- an agent that uses Gemini and memories.
+"""
+⚠️  REFERENCE CODE — not tested end-to-end. See examples/sentinel/ and examples/rosas_bakery/ for working agents.
+Personal Shopper -- an agent that uses Gemini and memories.
 
 Demonstrates:
 - Reading and saving memories for persistent preferences
