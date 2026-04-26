@@ -1,4 +1,6 @@
-"""Appointment Bot -- a polling-based agent (no webhook required).
+"""
+⚠️  REFERENCE CODE — not tested end-to-end. See examples/sentinel/ and examples/rosas_bakery/ for working agents.
+Appointment Bot -- a polling-based agent (no webhook required).
 
 Demonstrates:
 - Polling for new vibes instead of using webhooks

@@ -1,3 +1,5 @@
+> **⚠️ Reference Code** — This example has not been tested end-to-end. For working agents, see [`sentinel/`](../sentinel/) and [`rosas_bakery/`](../rosas_bakery/).
+
 # Dr. Sarah - Nutrition Coach
 
 A complete marketplace agent example for a nutrition practice. Clients book consultations, request personalized meal plans, and ask nutrition questions -- all through chat on Zinq.
