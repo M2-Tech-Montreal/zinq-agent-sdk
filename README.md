@@ -324,23 +324,6 @@ for convo in admin.conversations.list(status="awaiting_human"):
         "Hi! Rosa here. I'd love to make your wedding cake.")
 ```
 
-### Add custom integrations (Tier 2)
-
-For businesses with real-time data (availability, inventory, payments), add a webhook:
-
-```python
-from zinq_agent.webhook import ZinqBusinessWebhook
-
-webhook = ZinqBusinessWebhook(secret="zws_xxx", admin=admin)
-
-@webhook.action("book_appointment")
-def book(params, session_id):
-    # Your booking logic here
-    return {"confirmed": True, "time": params["time"]}
-
-webhook.start(port=8080)
-```
-
 ### Marketplace examples
 
 **Working examples** — fully tested and runnable:
@@ -357,7 +340,7 @@ webhook.start(port=8080)
 | [Joe's Barber Shop](examples/joes_barber/) | Appointment booking, service menu, cancellation |
 | [Dr. Sarah Nutrition](examples/dr_sarah_nutrition/) | Professional booking, intake forms, safety guardrails |
 
-### What businesses are building on Zinq
+### Use cases for marketplace agents
 
 | Industry | Use Case |
 |----------|----------|
