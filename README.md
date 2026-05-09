@@ -63,12 +63,6 @@ Your agent joins this ecosystem. It has its own profile, avatar, and chat thread
 pip install zinq-agent
 ```
 
-For webhook support (receiving real-time events from users):
-
-```bash
-pip install zinq-agent[webhook]
-```
-
 ## Quick Start
 
 Five lines to send your first vibe:
