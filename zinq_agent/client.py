@@ -34,16 +34,9 @@ from typing import Any, Iterator
 
 import httpx
 
-from .exceptions import (
-    AuthenticationError,
-    InsufficientCreditsError,
-    NotFoundError,
-    RateLimitError,
-    ServerError,
-    ValidationError,
-    ZinqError,
-)
+from .exceptions import AuthenticationError
 from .gemini import AsyncGeminiClient, GeminiClient
+from .utils import raise_for_status as _raise_for_status
 from .models import (
     Contact,
     DiaryEntry,
@@ -80,41 +73,6 @@ def _resolve_api_key(api_key: str | None) -> str:
             f"Invalid API key format. Expected 'zak_' prefix, got '{key[:4]}...'"
         )
     return key
-
-
-def _raise_for_status(response: httpx.Response) -> None:
-    """Raise a typed ZinqError based on the HTTP status code."""
-    if response.is_success:
-        return
-
-    status = response.status_code
-
-    try:
-        detail = response.json()
-        message = detail.get("error") or detail.get("message") or response.text
-    except Exception:
-        detail = {}
-        message = response.text or f"HTTP {status}"
-
-    if status == 401:
-        raise AuthenticationError(str(message))
-    if status == 402:
-        raise InsufficientCreditsError(
-            str(message),
-            credits_remaining=detail.get("creditsRemaining", 0),
-            credits_required=detail.get("creditsRequired", 0),
-        )
-    if status == 404:
-        raise NotFoundError(str(message))
-    if status == 422:
-        raise ValidationError(str(message))
-    if status == 429:
-        retry_after = float(response.headers.get("Retry-After", "60"))
-        raise RateLimitError(str(message), retry_after=retry_after)
-    if 500 <= status < 600:
-        raise ServerError(str(message))
-
-    raise ZinqError(str(message), status_code=status)
 
 
 # ===========================================================================

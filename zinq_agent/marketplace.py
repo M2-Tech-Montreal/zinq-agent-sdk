@@ -34,10 +34,8 @@ from typing import Any
 
 import httpx
 
-from .exceptions import (
-    AuthenticationError,
-    ZinqError,
-)
+from .exceptions import AuthenticationError
+from .utils import raise_for_status as _raise_for_status
 
 _DEFAULT_BASE_URL = "https://zinq-app.com/api"
 _DEFAULT_TIMEOUT = 30.0
@@ -52,25 +50,6 @@ def _resolve_biz_key(api_key: str | None) -> str:
             "or pass api_key= to the ZinqMarketplaceAdmin constructor."
         )
     return key
-
-
-def _raise_for_status(response: httpx.Response) -> None:
-    """Raise a typed ZinqError based on the HTTP status code."""
-    if response.is_success:
-        return
-
-    status = response.status_code
-
-    try:
-        detail = response.json()
-        message = detail.get("error") or detail.get("message") or response.text
-    except Exception:
-        message = response.text or f"HTTP {status}"
-
-    if status == 401:
-        raise AuthenticationError(str(message))
-
-    raise ZinqError(str(message), status_code=status)
 
 
 # ---------------------------------------------------------------------------

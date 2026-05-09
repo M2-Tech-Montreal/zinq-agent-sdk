@@ -33,7 +33,7 @@ python3 sentinel.py
 # Business agent (bakery with menu + orders)
 cd rosas_bakery/
 export ZINQ_BIZ_KEY=zbk_your_key
-bash start.sh
+python3 server.py
 ```
 
 ## Creating Your Own Agent
