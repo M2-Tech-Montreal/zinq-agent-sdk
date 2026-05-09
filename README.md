@@ -1,6 +1,10 @@
 # Zinq Agent SDK for Python
 
-### Build AI agents that do real work — monitor email, automate Slack, run a personal shopping assistant, book appointments — all in Python.
+### Build private AI agents for yourself — or publish business agents to the Zinq Marketplace and get paying customers without building an app.
+
+**Personal agents** run anywhere — your phone, your desktop, or the cloud. Monitor email, automate Slack, track crypto, send daily briefings — anything Python can do, your agent can do, and it pushes results straight to your pocket.
+
+**Marketplace agents** let you build an AI agent for a business and publish it to the Zinq Marketplace. Customers find your agent, enable it, and interact through chat. You handle tool calls (bookings, orders, inventory) with a Python webhook server.
 
 <!-- TODO: Add logo/banner image here -->
 <!-- ![Zinq Agent SDK](https://zinq-app.com/assets/sdk-banner.png) -->
@@ -13,25 +17,29 @@
 
 ### What is Zinq?
 
-[Zinq](https://zinq-app.com) is a social app where every interaction happens through **vibes** — short voice, video, photo, or text messages. Think WhatsApp meets a personal diary, with AI agents built in. Users connect with people and businesses, keep a private diary, and chat with AI agents that understand their context.
+[Zinq](https://zinq-app.com) is a mobile app where every interaction happens through **vibes** — short voice, video, photo, or text messages. Users connect with people they know, keep a private diary, and talk to AI agents that understand their actual life.
 
-Every voice and video vibe is **automatically transcribed and summarized** by Gemini — so your agent can read what users said, not just what they typed. The user's diary builds a rich personal context over time that your agent can search and learn from.
+**The diary is the key.** Every vibe a user shares — every voice note, every photo, every conversation — gets transcribed, classified, and stored as a searchable private diary. This diary is what makes Zinq agents different from every other AI assistant: your agent doesn't start from zero. It reads the user's diary. It knows their habits, their mood patterns, their goals, their relationships. The more they use Zinq, the smarter every agent gets.
 
-Zinq ships with **14 built-in AI agents** that users already interact with daily:
+Your personal agent gets full access to this diary through the SDK — semantic search, date browsing, context injection. This is the context layer that no other agent platform has.
+
+Every voice and video vibe is **automatically transcribed and summarized** by Gemini — so your agent can read what users said, not just what they typed.
+
+Zinq ships with built-in AI agents that users already interact with daily:
 
 | Agent | What It Does |
 |-------|-------------|
-| **Aura** | Mental wellness coach — guided meditation, CBT exercises, mood tracking |
-| **Atlas** | Fitness & nutrition — workout plans, fasting protocols, supplement tracking |
-| **Cue** | Personal task manager — todo lists organized into projects |
-| **Compass** | Travel concierge — trip planning, restaurant recommendations |
-| **Flick** | Movie advisor — personalized recommendations |
-| **Nexus** | Relationship manager — connection insights, intro suggestions |
-| **Vantage** | Pitch & negotiation prep coach |
-| **Astra** | Astrology — birth charts, daily horoscopes |
-| + 6 more | Games (chess, word games), diary assistant, support, finance |
+| **Veritas** | Fraud and scam detection — paste any message, document, or profile and get a risk report |
+| **Aura** | Mental wellness — CBT techniques, mood tracking, stress management |
+| **Atlas** | Fitness & nutrition — workouts, meal plans, recovery |
+| **Diary** | Private life database — ask anything about your own life |
+| **Cue** | Task manager — conversational todo lists |
+| **Radar** | Travel concierge — trips, restaurants, experiences |
+| **Vantage** | Meeting prep and negotiation coach |
+| **Astra** | Personalised astrology grounded in your diary patterns |
+| + 18 more | Games (chess, word puzzles, trivia), finance, movies, relationship manager |
 
-Your agent joins this ecosystem. It has its own profile, avatar, and chat thread — just like a real contact. Users interact with your agent the same way they interact with these built-in agents: by sending vibes (voice, video, text, photos).
+Your agent joins this ecosystem. It has its own profile, avatar, and chat thread — just like a real contact. Users interact with your agent the same way they interact with the built-in agents: by sending vibes.
 
 ### Why Zinq Agents?
 
@@ -41,15 +49,11 @@ Your agent joins this ecosystem. It has its own profile, avatar, and chat thread
 - **Deploy anywhere** — Your laptop, GCloud free tier, AWS, Docker, Railway. No vendor lock-in.
 - **Open source** — MIT licensed. Build what you want.
 
-### What people are building
+### Two real examples
 
-- **Email monitors** — Get AI-summarized email digests in your pocket
-- **Slack bridges** — Important mentions forwarded as mobile notifications
-- **Personal shoppers** — AI-powered product recommendations for small businesses
-- **Appointment bookers** — Automated scheduling for barbers, restaurants, clinics
-- **Fitness coaches** — Personalized workout plans using diary data
-- **Crypto trading agents** — Portfolio monitoring, price alerts, P&L summaries via Binance/Coinbase
-- **Daily digest agents** — Morning briefings from multiple data sources
+**[Sentinel](examples/sentinel/)** — a personal agent that monitors your Gmail and Slack from a $0/month GCloud instance. Every 5 minutes it checks for new emails, uses Gemini to score importance and generate a summary, and sends you a vibe. You read a one-line summary on your phone instead of opening your inbox. Runs 24/7, costs nothing. This is what a personal agent looks like.
+
+**[Rosa's Bakery](examples/rosas_bakery/)** — a marketplace agent for a neighborhood bakery. Customers open Zinq, find Rosa's, and chat. The agent knows today's specials, takes pickup orders, handles custom cake requests with human handoff, and sends morning broadcast vibes to regulars. Rosa doesn't need a website, an app, or a Shopify subscription — just an AI agent that talks to her customers. This is what a marketplace agent looks like.
 
 ---
 
@@ -254,27 +258,104 @@ Full reference: **[docs/business-agents.md](docs/business-agents.md)**
 
 ---
 
-## Build. Publish. Get Paid.
+## Marketplace Agents
 
-Turn your business into an AI agent on the Zinq marketplace.
+Build an AI agent for a business, deploy it to the Zinq Marketplace, and handle customer interactions with a Python webhook.
 
+### 1. Generate your agent definition
+
+```python
+from zinq_agent import ZinqMarketplaceAdmin
+
+admin = ZinqMarketplaceAdmin()
+
+# AI generates a YAML agent definition from your description
+result = admin.agent.generate(
+    "A bakery in Park Slope. Sourdough, croissants, custom cakes. "
+    "Open Tue-Sun 7am-6pm. Custom cakes need 48h notice.",
+    name="Rosa's Bakery"
+)
+
+# Review and refine
+review = admin.agent.review(yaml=result["yamlDefinition"])
+refined = admin.agent.refine(
+    yaml=result["yamlDefinition"],
+    feedback="Add a daily specials tool and human handoff for wedding cakes"
+)
+
+# Deploy
+admin.agent.deploy(refined["yaml"])
 ```
-Describe your business  -->  AI generates your agent  -->  Publish to marketplace  -->  Customers find you on Zinq
+
+### 2. Handle tool calls with a webhook
+
+```python
+from zinq_agent.webhook import ZinqBusinessWebhook
+
+webhook = ZinqBusinessWebhook(secret="zws_xxx", admin=admin)
+
+@webhook.action("request_pickup")
+def handle_order(params, session_id):
+    # Your order logic
+    return {"confirmed": True, "pickup_time": params["time"]}
+
+@webhook.action("request_custom_cake")
+def handle_cake(params, session_id):
+    if params.get("occasion") == "wedding":
+        return {"escalated": True, "message": "Connecting you with Rosa for your wedding cake."}
+    return {"confirmed": True, "price": "$45"}
+
+webhook.start(port=8080)
 ```
 
-No website needed. No app to build. No Shopify subscription. Just an AI agent that talks to your customers.
+### 3. Handle human handoffs
+
+When the AI escalates a conversation, you handle it through the SDK:
+
+```python
+# Check for conversations waiting on a human
+for convo in admin.conversations.list(status="awaiting_human"):
+    details = admin.conversations.get(convo["sessionId"])
+    for msg in details["messages"]:
+        print(f"  {msg['userName']}: {msg['textContent']}")
+
+    # Reply to the customer (appears as a vibe from the agent)
+    admin.conversations.reply(convo["sessionId"],
+        "Hi! Rosa here. I'd love to make your wedding cake.")
+```
+
+### Add custom integrations (Tier 2)
+
+For businesses with real-time data (availability, inventory, payments), add a webhook:
+
+```python
+from zinq_agent.webhook import ZinqBusinessWebhook
+
+webhook = ZinqBusinessWebhook(secret="zws_xxx", admin=admin)
+
+@webhook.action("book_appointment")
+def book(params, session_id):
+    # Your booking logic here
+    return {"confirmed": True, "time": params["time"]}
+
+webhook.start(port=8080)
+```
 
 ### Marketplace examples
 
-Complete, runnable examples showing real business agents:
+**Working examples** — fully tested and runnable:
 
 | Example | What It Does | Key Features |
 |---------|-------------|--------------|
-| **[Joe's Barber Shop](examples/joes_barber/)** | Customers book haircuts through chat | Appointment booking, availability checking, service menu, cancellation |
 | **[Rosa's Bakery](examples/rosas_bakery/)** | Daily specials, pickup orders, custom cakes | Morning broadcasts, order management, human handoff for custom requests |
-| **[Dr. Sarah Nutrition](examples/dr_sarah_nutrition/)** | Nutrition consultations and meal plans | Professional booking, AI-powered advice, intake forms, safety guardrails |
+| **[Sentinel](examples/sentinel/)** | Gmail + Slack monitoring with AI summaries | Email digest, importance scoring, reply support, GCloud deployment |
 
-Each example includes a YAML agent definition, a working webhook server, and sample conversations.
+**Starter templates** — code scaffolding for common business types (not yet fully tested):
+
+| Example | What It Shows |
+|---------|--------------|
+| [Joe's Barber Shop](examples/joes_barber/) | Appointment booking, service menu, cancellation |
+| [Dr. Sarah Nutrition](examples/dr_sarah_nutrition/) | Professional booking, intake forms, safety guardrails |
 
 ### What businesses are building on Zinq
 
@@ -286,30 +367,6 @@ Each example includes a YAML agent definition, a working webhook server, and sam
 | Plumbers, electricians, cleaners | Service quotes and scheduling |
 | Fashion designers, artists | Personal shopping and commissions |
 | Tutors, music teachers | Lesson scheduling and progress tracking |
-
-### How it works
-
-1. **Define your agent** -- Write a YAML file describing your business, services, and personality (or let Gemini generate it from a description)
-2. **Build your webhook** -- Handle tool calls (book appointments, take orders, answer questions) with `ZinqBusinessWebhook`
-3. **Deploy** -- `admin.agent.deploy(open("agent.yaml").read())`
-4. **Go live** -- Your agent appears in the Zinq marketplace. Customers enable it and start chatting.
-
-```python
-from zinq_agent import ZinqMarketplaceAdmin
-from zinq_agent.webhook import ZinqBusinessWebhook
-
-admin = ZinqMarketplaceAdmin()
-webhook = ZinqBusinessWebhook(secret="zws_xxx", admin=admin)
-
-@webhook.action("book_appointment")
-def book(params, session_id):
-    # Your booking logic here
-    return {"confirmed": True, "time": params["time"]}
-
-# Deploy and start
-admin.agent.deploy(open("agent.yaml").read())
-webhook.start(port=8080)
-```
 
 ---
 
@@ -324,9 +381,11 @@ export ZINQ_BIZ_KEY=zbk_your_key_here        # Only for ZinqMarketplaceAdmin
 ```
 
 ```python
-# No arguments needed -- reads from environment
+# No arguments needed -- reads ZINQ_API_KEY from environment
 agent = ZinqAgent()
-webhook = ZinqWebhook(secret=os.environ["ZINQ_WEBHOOK_SECRET"])
+
+# Webhook secret must be passed explicitly
+webhook = ZinqWebhook(secret="zws_your_secret_here")
 ```
 
 ## Async Support
@@ -341,11 +400,10 @@ async def main():
     async with AsyncZinqAgent() as agent:
         await agent.vibes.send(text="Async vibe!")
 
-        # Streaming Gemini
-        async for chunk in agent.gemini.stream_chat(
+        response = await agent.gemini.chat(
             messages=[{"role": "user", "content": "Tell me a joke"}],
-        ):
-            print(chunk, end="", flush=True)
+        )
+        print(response.text)
 
 asyncio.run(main())
 ```
@@ -379,21 +437,23 @@ except ZinqError as e:
 
 See the [`examples/`](examples/) directory:
 
-### Personal agents
+### Working examples
 
-| Example | Description | Requires Webhooks? |
-|---------|-------------|-------------------|
-| [`echo_bot.py`](examples/echo_bot.py) | Echoes back everything the user says | Yes |
-| [`appointment_bot.py`](examples/appointment_bot.py) | Polling-based appointment scheduler | No |
-| [`personal_shopper.py`](examples/personal_shopper.py) | Uses Gemini + memories for personalized recommendations | Yes |
+| Example | Description | Type |
+|---------|-------------|------|
+| [`sentinel/`](examples/sentinel/) | Gmail + Slack monitor with AI summaries — deploy to GCloud free tier | Personal |
+| [`rosas_bakery/`](examples/rosas_bakery/) | Bakery ordering, daily specials, human handoff | Marketplace |
 
-### Marketplace business agents
+### Starter templates (ideas — not fully tested)
 
-| Example | Description | Key Features |
-|---------|-------------|-------------|
-| [`joes_barber/`](examples/joes_barber/) | Barber shop appointment booking | Service menu, availability, cancellation |
-| [`rosas_bakery/`](examples/rosas_bakery/) | Bakery ordering and daily specials | Pickup orders, broadcasts, custom cake handoff |
-| [`dr_sarah_nutrition/`](examples/dr_sarah_nutrition/) | Nutrition consultations and meal plans | Booking, intake forms, AI advice, safety guardrails |
+| Example | Description | Type |
+|---------|-------------|------|
+| [`echo_bot.py`](examples/echo_bot.py) | Echoes back everything the user says | Personal |
+| [`appointment_bot.py`](examples/appointment_bot.py) | Polling-based appointment scheduler | Personal |
+| [`personal_shopper.py`](examples/personal_shopper.py) | Gemini + memories for recommendations | Personal |
+| [`trading_bot.py`](examples/trading_bot.py) | Crypto portfolio monitoring via Binance | Personal |
+| [`joes_barber/`](examples/joes_barber/) | Barber shop appointment booking | Marketplace |
+| [`dr_sarah_nutrition/`](examples/dr_sarah_nutrition/) | Nutrition consultations and meal plans | Marketplace |
 
 ## Developer Guides
 
@@ -416,6 +476,14 @@ Detailed reference docs are in the [`docs/`](docs/) directory:
 - **[Examples Cookbook](docs/examples.md)** -- Copy-paste recipes for common agents
 - **[Deployment](docs/deployment.md)** -- Run your agent in production
 - **[Best Practices](docs/best-practices.md)** -- Tips for building great agents
+
+## Pricing
+
+The SDK is free. Building agents is free. Publishing to the marketplace is free. Zinq never charges developers.
+
+Users pay for their own credits — either per-use or through a subscription. Credits are inexpensive. As a developer, you pay nothing.
+
+Marketplace agent developers are eligible for a profit-sharing arrangement on the credits your agent generates. Contact Vincent Mayeski at v@m2te.ch for details.
 
 ## Requirements
 
@@ -516,19 +584,17 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 The Zinq Agent SDK is perfect for building:
 
-| Use Case | Description | Example |
-|----------|-------------|---------|
-| **Email AI Assistant** | Monitor Gmail/Outlook, summarize, auto-reply | [Sentinel](examples/sentinel/) |
-| **Slack Bot** | Bridge Slack mentions to mobile, summarize channels | [examples/](docs/examples.md) |
-| **Personal Shopper** | AI product recommendations for online stores | [personal_shopper.py](examples/personal_shopper.py) |
-| **Appointment Scheduler** | Automated booking for service businesses | [appointment_bot.py](examples/appointment_bot.py) |
-| **Crypto Trading Agent** | Portfolio monitoring, price alerts, P&L summaries via Binance | [trading_bot.py](examples/trading_bot.py) |
-| **Fitness Coach** | Personalized workouts using diary data + Gemini | [examples](docs/examples.md) |
-| **Daily Digest** | Morning briefing from email, calendar, news | [examples](docs/examples.md) |
-| **IoT Monitor** | Smart home alerts via Zinq vibes | Build your own! |
-| **Customer Support** | AI-first support with human handoff (Business Agent) | [docs/business-agents.md](docs/business-agents.md) |
-| **Online Shop** | AI personal shopper for your brand (Business Agent) | [docs/business-agents.md](docs/business-agents.md) |
-| **Appointment Booking** | Barber, spa, clinic scheduling (Business Agent) | [docs/business-agents.md](docs/business-agents.md) |
+| Use Case | Description | Status |
+|----------|-------------|--------|
+| **Email AI Assistant** | Monitor Gmail/Outlook, summarize, auto-reply | Working — [Sentinel](examples/sentinel/) |
+| **Bakery / Restaurant** | Ordering, daily specials, human handoff | Working — [Rosa's Bakery](examples/rosas_bakery/) |
+| **Slack Bot** | Bridge Slack mentions to mobile, summarize channels | Idea |
+| **Personal Shopper** | AI product recommendations for online stores | Starter template |
+| **Appointment Scheduler** | Automated booking for service businesses | Starter template |
+| **Crypto Trading Agent** | Portfolio monitoring, price alerts via Binance | Starter template |
+| **Fitness Coach** | Personalized workouts using diary data + Gemini | Idea |
+| **Daily Digest** | Morning briefing from email, calendar, news | Idea |
+| **Customer Support** | AI-first support with human handoff | Idea |
 
 ## Keywords
 
