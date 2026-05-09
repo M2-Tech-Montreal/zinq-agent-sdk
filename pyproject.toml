@@ -28,23 +28,22 @@ classifiers = [
 dependencies = [
     "httpx>=0.25.0",
     "pydantic>=2.0.0",
+    "flask>=3.0.0",
 ]
 
 [project.optional-dependencies]
-webhook = ["flask>=3.0.0"]
 dev = [
     "pytest>=8.0.0",
     "respx>=0.21.0",
-    "flask>=3.0.0",
     "ruff>=0.4.0",
     "mypy>=1.10.0",
 ]
 
 [project.urls]
-Homepage = "https://github.com/zinq-app/zinq-agent-python"
-Documentation = "https://docs.zinq-app.com/sdk/python"
-Repository = "https://github.com/zinq-app/zinq-agent-python"
-Issues = "https://github.com/zinq-app/zinq-agent-python/issues"
+Homepage = "https://github.com/M2-Tech-Montreal/zinq-agent-sdk"
+Documentation = "https://github.com/M2-Tech-Montreal/zinq-agent-sdk#readme"
+Repository = "https://github.com/M2-Tech-Montreal/zinq-agent-sdk"
+Issues = "https://github.com/M2-Tech-Montreal/zinq-agent-sdk/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["zinq_agent"]
