@@ -19,6 +19,7 @@ Optional env vars:
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
 import threading
@@ -46,7 +47,7 @@ def _log(tag: str, msg: str) -> None:
 
 agent = ZinqAgent()
 
-WEBHOOK_PORT = 8080
+WEBHOOK_PORT = int(os.environ.get("SENTINEL_WEBHOOK_PORT", "8080"))
 
 # Conversation history — last 10 messages for context
 _conversation: list[dict[str, str]] = []
@@ -596,7 +597,8 @@ def main():
         sys.exit(1)
 
     # Set agent profile and register webhook
-    webhook_url = f"http://34.58.243.153:{WEBHOOK_PORT}/webhook"
+    webhook_host = os.environ.get("SENTINEL_WEBHOOK_HOST", "34.58.243.153")
+    webhook_url = f"http://{webhook_host}:{WEBHOOK_PORT}/webhook"
     try:
         agent.user.update_profile(
             name="Sentinel",
