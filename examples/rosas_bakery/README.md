@@ -113,6 +113,46 @@ Fresh out of the oven today:
 Order ahead for pickup — just message me!
 ```
 
+## YAML Reference
+
+The agent definition file (`rosa.yaml`) tells Zinq how to configure the agent:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | Yes | Display name shown to customers (e.g. "Rosa's Bakery") |
+| `type` | Yes | Slug identifier, must be unique (e.g. "rosas_bakery") |
+| `display_name` | No | Short name for chat header (e.g. "Rosa"). Falls back to `name` |
+| `bio` | No | One-line description shown in the agent directory |
+| `prompt` | Yes | Personality and behavior instructions for Gemini |
+| `tools` | No | List of tools the agent can call (see below) |
+| `collections` | No | Data collections the agent can query (menu, FAQ, etc.) |
+
+### Tool types
+
+| Type | Description |
+|------|-------------|
+| `query_log` | Query a data collection (e.g. browse menu items). Set `dataType` to the collection name |
+| `external` | Call your webhook server. Set `webhookUrl` to the endpoint |
+
+### How fields map to the app
+
+- **Agent Directory**: shows `name` + `bio`
+- **Chat header**: shows `display_name` (or `name` if not set)
+- **Chat behavior**: controlled by `prompt`
+- **`type`**: internal identifier — customers never see it. Must match what `setup_rosa.py` deploys under
+
+### Example
+
+```yaml
+name: Rosa's Bakery
+type: rosas_bakery
+display_name: Rosa
+bio: Fresh pastries, artisan bread, and the best espresso in town
+prompt: |
+  You are Rosa, the friendly owner of Rosa's Bakery.
+  ...
+```
+
 ## Architecture
 
 - **Static menu** — stored in Zinq collections via `setup_rosa.py`, never changes
