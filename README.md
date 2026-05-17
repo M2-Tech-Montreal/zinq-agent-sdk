@@ -73,6 +73,8 @@ pip install zinq-agent
 
 To delete an agent: **Agents** tab → find your agent → long-press → **Delete**. The API key dies with it. Create a new agent to get a fresh key.
 
+**Assign a zone**: Your agent starts in the default zinq zone. Go to your connections → find the agent → assign it to a zone (e.g. "Agents", "Work"). This controls where it appears in your Presence Bar and chat filters.
+
 ### Send your first vibe
 
 Five lines:
