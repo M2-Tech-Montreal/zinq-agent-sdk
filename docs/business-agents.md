@@ -125,6 +125,30 @@ webhook_url: "https://your-server.com/webhook"
 
 External tools POST to your server with extracted parameters. Query tools search your data collections (loaded via `admin.data.add()`).
 
+### Webhook URLs in YAML — don't hardcode IPs
+
+External tool `webhookUrl` fields point to your server. **Never hardcode an IP address** — use environment variable placeholders and substitute them at deploy time:
+
+```yaml
+# rosa.yaml — uses placeholders
+tools:
+  - name: get_specials
+    type: external
+    webhookUrl: https://${ROSA_SERVER_HOST}:${ROSA_SERVER_PORT}/specials
+```
+
+```python
+# setup.py — substitutes from env before deploying
+import os
+with open("agent.yaml") as f:
+    yaml_content = f.read()
+yaml_content = yaml_content.replace("${MY_SERVER_HOST}", os.environ["MY_SERVER_HOST"])
+yaml_content = yaml_content.replace("${MY_SERVER_PORT}", os.environ.get("MY_SERVER_PORT", "8080"))
+admin.agent.deploy(yaml_content)
+```
+
+This way the same YAML works on any machine — local dev, staging, production — by changing one env var.
+
 ### How YAML fields map to the app
 
 | Where | What shows |
