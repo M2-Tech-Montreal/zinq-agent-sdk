@@ -61,6 +61,51 @@ sudo systemctl enable sentinel
 sudo systemctl start sentinel
 ```
 
+## Running Multiple Instances
+
+Each Sentinel instance needs its own agent (separate `zak_` key) and webhook port. Create multiple agents in the Zinq app, then run each with different env vars:
+
+```bash
+# Instance 1 — watches personal email
+ZINQ_API_KEY=zak_first_key \
+GMAIL_ACCOUNTS=personal@gmail.com \
+SENTINEL_WEBHOOK_PORT=8082 \
+SENTINEL_WEBHOOK_HOST=your.server.ip \
+python sentinel.py
+
+# Instance 2 — watches work email
+ZINQ_API_KEY=zak_second_key \
+GMAIL_ACCOUNTS=work@company.com \
+SENTINEL_WEBHOOK_PORT=8083 \
+SENTINEL_WEBHOOK_HOST=your.server.ip \
+python sentinel.py
+```
+
+Each instance shows up as a separate agent in your Zinq app with its own chat thread.
+
+For systemd, copy the service file with a different name per instance:
+
+```bash
+sudo cp sentinel.service /etc/systemd/system/sentinel-personal.service
+sudo cp sentinel.service /etc/systemd/system/sentinel-work.service
+# Edit each with its own ZINQ_API_KEY, GMAIL_ACCOUNTS, and SENTINEL_WEBHOOK_PORT
+```
+
+## Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `ZINQ_API_KEY` | Yes | -- | Your agent's API key (`zak_...`) |
+| `GMAIL_ACCOUNTS` | Yes* | -- | Comma-separated Gmail addresses to monitor |
+| `SLACK_BOT_TOKEN` | No | -- | Slack bot token (`xoxb-...`) |
+| `VIP_SENDERS` | No | -- | Comma-separated emails that trigger immediate alerts |
+| `GMAIL_POLL_INTERVAL` | No | 300 | Seconds between Gmail checks |
+| `SLACK_POLL_INTERVAL` | No | 600 | Seconds between Slack checks |
+| `SENTINEL_WEBHOOK_PORT` | No | 8080 | Port for the local webhook listener |
+| `SENTINEL_WEBHOOK_HOST` | No | 34.58.243.153 | Public IP for webhook registration with Zinq |
+
+*At least one of `GMAIL_ACCOUNTS` or `SLACK_BOT_TOKEN` is required.
+
 ## Files
 
 | File | What |
