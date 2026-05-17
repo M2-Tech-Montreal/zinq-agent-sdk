@@ -31,6 +31,17 @@ yaml_content = yaml_content.replace("${ROSA_SERVER_PORT}", ROSA_SERVER_PORT)
 admin.agent.deploy(yaml_content)
 print("Agent deployed")
 
+# Upload avatar if rosa.png exists
+avatar_path = os.path.join(os.path.dirname(__file__), "rosa.png")
+if os.path.exists(avatar_path):
+    try:
+        admin.agent.upload_avatar(avatar_path)
+        print("Avatar uploaded")
+    except Exception as e:
+        print(f"Avatar upload failed (non-fatal): {e}")
+else:
+    print("No rosa.png found — skipping avatar. Add rosa.png to this directory and re-run.")
+
 # Load menu
 menu = [
     {"name": "Espresso", "price": 3.50, "category": "drinks", "description": "Double shot, rich and bold"},
