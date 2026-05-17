@@ -444,6 +444,42 @@ Your webhook URL: `https://my-zinq-agent.fly.dev/webhook`
 
 ---
 
+## Multiple Agents on One Machine
+
+You can run multiple agents on the same machine. Each agent is a separate Python process with its own `ZINQ_API_KEY`.
+
+**Polling agents** (no webhook) have no port conflicts — just run them with different API keys:
+
+```bash
+# Terminal 1
+ZINQ_API_KEY=zak_agent_one python agent_one.py
+
+# Terminal 2
+ZINQ_API_KEY=zak_agent_two python agent_two.py
+```
+
+**Webhook agents** each need a unique port — the kernel only allows one process per port:
+
+```bash
+# Agent 1 on port 8082
+ZINQ_API_KEY=zak_agent_one PORT=8082 python agent_one.py
+
+# Agent 2 on port 8083
+ZINQ_API_KEY=zak_agent_two PORT=8083 python agent_two.py
+```
+
+For systemd, create a separate service file per agent:
+
+```bash
+sudo cp zinq-agent.service /etc/systemd/system/zinq-agent-one.service
+sudo cp zinq-agent.service /etc/systemd/system/zinq-agent-two.service
+# Edit each with its own ZINQ_API_KEY and PORT
+```
+
+Each agent appears as a separate contact in the Zinq app with its own chat thread.
+
+---
+
 ## Production Checklist
 
 Before going to production, make sure you:
