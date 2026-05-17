@@ -21,6 +21,8 @@ To **delete** an agent: **Agents** tab → find your agent → long-press → **
 
 To **start fresh**: delete the old agent, create a new one, and use the new `zak_` key.
 
+**Assign a zone**: Your agent starts in the default zinq zone. To organize it, go to your **connections** → find the agent → assign it to a zone (e.g. "Agents", "Work", or any custom zone). This controls where it appears in your Presence Bar and chat filters.
+
 ## Step 2: Install the SDK
 
 ```bash
