@@ -125,6 +125,23 @@ webhook_url: "https://your-server.com/webhook"
 
 External tools POST to your server with extracted parameters. Query tools search your data collections (loaded via `admin.data.add()`).
 
+### HTTPS requirement and self-signed certs
+
+External tool URLs **must use HTTPS** — the Zinq backend rejects plain HTTP webhook URLs. However, **self-signed certificates are accepted** — the backend skips certificate validation for external tool calls. This means:
+
+- You need a cert, but it doesn't need to be from a real CA
+- A self-signed cert generated with `openssl` works fine
+- For production, use a real cert (Let's Encrypt) with a domain name
+
+Generate a self-signed cert for development:
+
+```bash
+cd your_agent_directory
+openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=YOUR_SERVER_IP"
+```
+
+Your webhook server loads these at startup to serve HTTPS. See [Rosa's Bakery `rosa_server.py`](../examples/rosas_bakery/rosa_server.py) for an example.
+
 ### Webhook URLs in YAML — don't hardcode IPs
 
 External tool `webhookUrl` fields point to your server. **Never hardcode an IP address** — use environment variable placeholders and substitute them at deploy time:
