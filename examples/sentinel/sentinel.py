@@ -597,28 +597,37 @@ def main():
         sys.exit(1)
 
     # Set agent profile and register webhook
-    webhook_host = os.environ.get("SENTINEL_WEBHOOK_HOST", "34.58.243.153")
-    webhook_url = f"http://{webhook_host}:{WEBHOOK_PORT}/webhook"
+    webhook_host = os.environ.get("SENTINEL_WEBHOOK_HOST")
+    if webhook_host:
+        webhook_url = f"http://{webhook_host}:{WEBHOOK_PORT}/webhook"
+    else:
+        webhook_url = None
+
     try:
-        agent.user.update_profile(
-            name="Sentinel",
-            nickname="Sentinel",
-            bio="Watches your email and Slack. Sends you urgent messages and daily digests.",
-            avatar_url="gs://zinq-app-media/avatars/agents/sentinel.png",
-        )
-        _log("SENTINEL", "Profile set: Sentinel")
+        profile_kwargs = {
+            "name": "Sentinel",
+            "nickname": "Sentinel",
+            "bio": "Watches your email and Slack. Sends you urgent messages and daily digests.",
+            "avatar_url": "gs://zinq-app-media/avatars/agents/sentinel.png",
+        }
+        result = agent.user.update_profile(**profile_kwargs)
+        _log("SENTINEL", f"Profile set: {result}")
     except Exception as e:
-        _log("SENTINEL", f"Profile update failed (non-fatal): {e}")
-    try:
-        import httpx
-        httpx.put(
-            f"https://zinq-app.com/api/agent-api/profile",
-            headers={"X-Agent-Key": config.ZINQ_API_KEY},
-            json={"webhookUrl": webhook_url},
-        )
-        _log("SENTINEL", f"Webhook registered: {webhook_url}")
-    except Exception as e:
-        _log("SENTINEL", f"Webhook registration failed (non-fatal): {e}")
+        _log("SENTINEL", f"ERROR: Profile update failed: {e}")
+
+    if webhook_url:
+        try:
+            import httpx
+            httpx.put(
+                f"https://zinq-app.com/api/agent-api/profile",
+                headers={"X-Agent-Key": config.ZINQ_API_KEY},
+                json={"webhookUrl": webhook_url},
+            )
+            _log("SENTINEL", f"Webhook registered: {webhook_url}")
+        except Exception as e:
+            _log("SENTINEL", f"ERROR: Webhook registration failed: {e}")
+    else:
+        _log("SENTINEL", "No SENTINEL_WEBHOOK_HOST set — webhook disabled (polling only)")
 
     # Send startup vibe
     agent.vibes.send(text="Sentinel is online. Watching your email and Slack.")
