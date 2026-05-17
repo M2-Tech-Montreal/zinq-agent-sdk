@@ -19,22 +19,22 @@ tools:
 
   - name: get_specials
     type: external
-    webhookUrl: https://34.58.243.153:8081/specials
+    webhookUrl: https://${ROSA_SERVER_HOST}:${ROSA_SERVER_PORT}/specials
     description: "Get today's specials and promotions"
 
   - name: check_availability
     type: external
-    webhookUrl: https://34.58.243.153:8081/inventory
+    webhookUrl: https://${ROSA_SERVER_HOST}:${ROSA_SERVER_PORT}/inventory
     description: "Check if items are currently in stock"
 
   - name: place_order
     type: external
-    webhookUrl: https://34.58.243.153:8081/orders
+    webhookUrl: https://${ROSA_SERVER_HOST}:${ROSA_SERVER_PORT}/orders
     description: "Place a customer order"
 
   - name: get_wait_time
     type: external
-    webhookUrl: https://34.58.243.153:8081/wait-time
+    webhookUrl: https://${ROSA_SERVER_HOST}:${ROSA_SERVER_PORT}/wait-time
     description: "Get current estimated wait time"
 
 collections:

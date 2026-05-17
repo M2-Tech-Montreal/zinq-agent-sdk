@@ -14,11 +14,21 @@ if not API_KEY:
     print("ERROR: Set ZINQ_BIZ_KEY first")
     exit(1)
 
+ROSA_SERVER_HOST = os.environ.get("ROSA_SERVER_HOST", "")
+ROSA_SERVER_PORT = os.environ.get("ROSA_SERVER_PORT", "8081")
+
+if not ROSA_SERVER_HOST:
+    print("ERROR: Set ROSA_SERVER_HOST to the public IP of the machine running rosa_server.py")
+    exit(1)
+
 admin = ZinqMarketplaceAdmin(api_key=API_KEY, base_url="https://zinq-app.com/api")
 
-# Deploy agent
+# Deploy agent — substitute server host/port in YAML
 with open("rosa.yaml") as f:
-    admin.agent.deploy(f.read())
+    yaml_content = f.read()
+yaml_content = yaml_content.replace("${ROSA_SERVER_HOST}", ROSA_SERVER_HOST)
+yaml_content = yaml_content.replace("${ROSA_SERVER_PORT}", ROSA_SERVER_PORT)
+admin.agent.deploy(yaml_content)
 print("Agent deployed")
 
 # Load menu
