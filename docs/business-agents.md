@@ -97,6 +97,44 @@ tools:
 webhook_url: "https://your-server.com/webhook"
 ```
 
+### YAML Field Reference
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | Yes | Display name shown to customers in the marketplace and chat (e.g. "Rosa's Bakery") |
+| `type` | No | Slug identifier, must be unique across your agents (e.g. "rosas_bakery"). Auto-generated from name if omitted |
+| `display_name` | No | Short name for chat header (e.g. "Rosa"). Falls back to `name` |
+| `tagline` | No | One-line pitch shown in marketplace listing |
+| `bio` | No | Short description shown in agent directory. Use `tagline` or `bio`, not both |
+| `description` | No | Longer description for marketplace detail page |
+| `category` | No | Marketplace category (e.g. "food", "health", "services") |
+| `prompt` / `personality` | Yes | Instructions for Gemini — personality, behavior rules, tone. Both field names work |
+| `greeting` | No | First message sent when a customer opens the chat |
+| `services` | No | List of services with `name`, `price`, `duration_minutes` |
+| `tools` | No | Tools the agent can call (see Tool Types below) |
+| `collections` | No | Data collections the agent can query (menu, FAQ, products) |
+| `webhook_url` | No | Default webhook URL for external tool calls |
+
+### Tool Types
+
+| Type | Description | Required Fields |
+|------|-------------|-----------------|
+| `external` | Calls your webhook server | `webhookUrl`, `description` |
+| `query_log` | Queries a data collection | `dataType` (collection name), `description` |
+| (parameters) | For tools with `parameters` list | `name`, `type`, `required` per param |
+
+External tools POST to your server with extracted parameters. Query tools search your data collections (loaded via `admin.data.add()`).
+
+### How YAML fields map to the app
+
+| Where | What shows |
+|-------|------------|
+| Marketplace listing | `name`, `tagline` or `bio`, `category` |
+| Chat header | `display_name` (falls back to `name`) |
+| First message | `greeting` (if set) |
+| Chat behavior | `prompt` / `personality` |
+| `type` | Internal only — customers never see it |
+
 ### 3. Build your webhook server
 
 ```python
