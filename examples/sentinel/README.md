@@ -102,7 +102,7 @@ sudo cp sentinel.service /etc/systemd/system/sentinel-work.service
 | `GMAIL_POLL_INTERVAL` | No | 300 | Seconds between Gmail checks |
 | `SLACK_POLL_INTERVAL` | No | 600 | Seconds between Slack checks |
 | `SENTINEL_WEBHOOK_PORT` | No | 8080 | Port for the local webhook listener |
-| `SENTINEL_WEBHOOK_HOST` | No | 34.58.243.153 | Public IP for webhook registration with Zinq |
+| `SENTINEL_WEBHOOK_HOST` | No | -- (disabled) | Public IP for webhook registration with Zinq. If not set, webhook is disabled (polling only) |
 
 *At least one of `GMAIL_ACCOUNTS` or `SLACK_BOT_TOKEN` is required.
 
