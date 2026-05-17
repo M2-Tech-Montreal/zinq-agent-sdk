@@ -835,6 +835,25 @@ class UserClient:
             _raise_for_status(response)
         return response.json()
 
+    def upload_avatar(self, file_path: str) -> dict:
+        """Upload an avatar image for the agent.
+
+        Args:
+            file_path: Path to image file (PNG or JPEG, max 5MB).
+
+        Returns:
+            Dict with ``avatarUrl`` of the uploaded image.
+        """
+        with open(file_path, "rb") as f:
+            response = self._client.post(
+                "/profile/avatar",
+                files={"file": f},
+                headers={"Content-Type": None},
+            )
+        if not response.is_success:
+            _raise_for_status(response)
+        return response.json()
+
 
 # ===========================================================================
 # Resource clients (async)

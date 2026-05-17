@@ -608,12 +608,22 @@ def main():
             "name": "Sentinel",
             "nickname": "Sentinel",
             "bio": "Watches your email and Slack. Sends you urgent messages and daily digests.",
-            "avatar_url": "gs://zinq-app-media/avatars/agents/sentinel.png",
         }
         result = agent.user.update_profile(**profile_kwargs)
         _log("SENTINEL", f"Profile set: {result}")
     except Exception as e:
         _log("SENTINEL", f"ERROR: Profile update failed: {e}")
+
+    # Upload avatar if sentinel.png exists
+    avatar_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sentinel.png")
+    if os.path.exists(avatar_path):
+        try:
+            result = agent.user.upload_avatar(avatar_path)
+            _log("SENTINEL", f"Avatar uploaded: {result}")
+        except Exception as e:
+            _log("SENTINEL", f"ERROR: Avatar upload failed: {e}")
+    else:
+        _log("SENTINEL", "No sentinel.png found — skipping avatar")
 
     if webhook_url:
         try:
