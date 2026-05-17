@@ -65,7 +65,17 @@ pip install zinq-agent
 
 ## Quick Start
 
-Five lines to send your first vibe:
+### Get your API key
+
+1. Open the Zinq app → **Agents** tab → tap **+** (create)
+2. Name your agent (e.g. "Sentinel") → tap **Create**
+3. Copy the `zak_` API key — this is your agent's identity
+
+To delete an agent: **Agents** tab → find your agent → long-press → **Delete**. The API key dies with it. Create a new agent to get a fresh key.
+
+### Send your first vibe
+
+Five lines:
 
 ```python
 from zinq_agent import ZinqAgent
