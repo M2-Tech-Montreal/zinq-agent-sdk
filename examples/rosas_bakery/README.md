@@ -17,7 +17,7 @@ A complete marketplace agent with static menu, external tools for live specials 
 
 ```bash
 cd examples/rosas_bakery
-openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=34.58.243.153"
+openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=YOUR_SERVER_IP"
 ```
 
 ### 2. Start the mock bakery server
@@ -36,6 +36,8 @@ Runs on `https://0.0.0.0:8081` with endpoints:
 
 ```bash
 export ZINQ_BIZ_KEY=zbk_your_key
+export ROSA_SERVER_HOST=YOUR_SERVER_IP   # public IP of the machine running rosa_server.py
+export ROSA_SERVER_PORT=8081             # default, change if needed
 python setup_rosa.py
 ```
 
