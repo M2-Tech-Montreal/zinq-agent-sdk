@@ -163,11 +163,13 @@ class AgentLifecycleClient:
         Returns:
             Dict with avatarUrl of the uploaded image.
         """
+        import mimetypes
+        mime = mimetypes.guess_type(file_path)[0] or "image/png"
+        name = file_path.rsplit("/", 1)[-1] if "/" in file_path else file_path
         with open(file_path, "rb") as f:
             response = self._client.post(
                 "/agent/avatar",
-                files={"file": f},
-                headers={"Content-Type": None},  # let httpx set multipart
+                files={"file": (name, f, mime)},
             )
         if not response.is_success:
             _raise_for_status(response)
