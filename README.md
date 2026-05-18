@@ -12,12 +12,13 @@
 [![PyPI version](https://img.shields.io/pypi/v/zinq-agent)](https://pypi.org/project/zinq-agent/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![App Store](https://img.shields.io/badge/App_Store-Download-blue?logo=apple)](https://apps.apple.com/us/app/zinq-ai-agent-suite-diary/id6760369400)
 
 **Zinq Agent SDK** lets you build personal AI agents in Python that connect to the [Zinq](https://zinq-app.com) platform. Your agent gets its own chat thread, can read the user's diary, send messages (vibes), remember preferences, and use Google Gemini for AI-powered responses — all through a clean, async-ready Python API.
 
 ### What is Zinq?
 
-[Zinq](https://zinq-app.com) is a mobile app where every interaction happens through **vibes** — short voice, video, photo, or text messages. Users connect with people they know, keep a private diary, and talk to AI agents that understand their actual life.
+[Zinq](https://zinq-app.com) is a mobile app where every interaction happens through **vibes** — short voice, video, photo, or text messages. Users connect with people they know, keep a private diary, and talk to AI agents that understand their actual life. [Download on the App Store](https://apps.apple.com/us/app/zinq-ai-agent-suite-diary/id6760369400).
 
 **The diary is the key.** Every vibe a user shares — every voice note, every photo, every conversation — gets transcribed, classified, and stored as a searchable private diary. This diary is what makes Zinq agents different from every other AI assistant: your agent doesn't start from zero. It reads the user's diary. It knows their habits, their mood patterns, their goals, their relationships. The more they use Zinq, the smarter every agent gets.
 

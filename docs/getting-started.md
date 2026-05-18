@@ -5,7 +5,7 @@ Build your first Zinq agent in under 5 minutes.
 ## Prerequisites
 
 - **Python 3.10 or higher** -- check with `python --version`
-- **A Zinq account** -- download [Zinq](https://zinq-app.com) and sign up
+- **A Zinq account** -- [download Zinq from the App Store](https://apps.apple.com/us/app/zinq-ai-agent-suite-diary/id6760369400) and sign up
 - **An agent API key** -- you'll create this in the next step
 
 ## Step 1: Create Your Agent
