@@ -64,6 +64,9 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
+    import os
+    port = int(os.environ.get("ROSA_SERVER_PORT", "8081"))
+
     # Self-signed SSL — generate with:
     # openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=localhost"
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -74,9 +77,9 @@ def main():
         print('  openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=localhost"')
         return
 
-    server = HTTPServer(("0.0.0.0", 8081), Handler)
+    server = HTTPServer(("0.0.0.0", port), Handler)
     server.socket = context.wrap_socket(server.socket, server_side=True)
-    print(f"[ROSA-SERVER] Running on https://0.0.0.0:8081")
+    print(f"[ROSA-SERVER] Running on https://0.0.0.0:{port}")
     server.serve_forever()
 
 
