@@ -1148,7 +1148,6 @@ class ZinqAgent:
             base_url=f"{base_url}/agent-api",
             headers={
                 "X-Agent-Key": self.api_key,
-                "Content-Type": "application/json",
                 "User-Agent": "zinq-agent-python/0.1.0",
             },
             timeout=timeout,
@@ -1229,7 +1228,6 @@ class AsyncZinqAgent:
             base_url=f"{base_url}/agent-api",
             headers={
                 "X-Agent-Key": self.api_key,
-                "Content-Type": "application/json",
                 "User-Agent": "zinq-agent-python/0.1.0",
             },
             timeout=timeout,
