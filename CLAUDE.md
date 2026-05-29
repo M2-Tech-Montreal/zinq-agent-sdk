@@ -246,7 +246,7 @@ for vibe in vibes:
 ### Webhook agent (real-time)
 ```python
 agent = ZinqAgent()
-webhook = ZinqWebhook(secret=os.environ["ZINQ_WEBHOOK_SECRET"])
+webhook = ZinqWebhook(secret="dev", skip_signature_check=True  # Signature verification coming soon)
 
 @webhook.on("vibe.received")
 def handle(event):

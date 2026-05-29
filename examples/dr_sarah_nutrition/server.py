@@ -11,7 +11,7 @@ Setup:
     pip install zinq-agent[webhook]
 
     export ZINQ_BIZ_KEY="zbk_your_key_here"
-    export ZINQ_WEBHOOK_SECRET="zws_your_secret_here"
+    # ZINQ_WEBHOOK_SECRET — not yet available, use skip_signature_check=True
 
     python server.py
 """
@@ -28,7 +28,7 @@ from zinq_agent.webhook import ZinqBusinessWebhook
 
 admin = ZinqMarketplaceAdmin(api_key=os.environ.get("ZINQ_BIZ_KEY"))
 webhook = ZinqBusinessWebhook(
-    secret=os.environ.get("ZINQ_WEBHOOK_SECRET", "zws_dev_secret"),
+    secret="dev", skip_signature_check=True  # Signature verification coming soon,
     admin=admin,
     skip_signature_check=os.environ.get("DEV_MODE") == "1",
 )

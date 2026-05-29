@@ -21,12 +21,13 @@ User's Phone                Zinq Backend                 Your Agent
 
 ## Setup
 
-### Step 1: Get Your Webhook Secret
+### Step 1: Get Your Credentials
 
-When you create your agent in the Zinq app, you get two credentials:
+When you create your agent in the Zinq app, you get:
 
 - **API Key** (`zak_...`) -- for making API calls
-- **Webhook Secret** (`zws_...`) -- for verifying incoming webhook requests
+
+> **Note:** Webhook signing secrets (`zws_...`) are not yet available. Use `skip_signature_check=True` during development. HMAC-SHA256 signature verification will be added in a future release.
 
 ### Step 2: Install Webhook Support
 
@@ -43,7 +44,7 @@ import os
 from zinq_agent import ZinqAgent, ZinqWebhook
 
 agent = ZinqAgent(api_key=os.environ["ZINQ_API_KEY"])
-webhook = ZinqWebhook(secret=os.environ["ZINQ_WEBHOOK_SECRET"])
+webhook = ZinqWebhook(secret="dev", skip_signature_check=True)  # Signature verification coming soon
 
 @webhook.on("vibe.received")
 def handle_vibe(event):
@@ -224,7 +225,7 @@ from zinq_agent import ZinqAgent, ZinqWebhook
 
 app = FastAPI()
 agent = ZinqAgent()
-webhook = ZinqWebhook(secret="zws_your_secret")
+webhook = ZinqWebhook(secret="dev", skip_signature_check=True)
 
 @webhook.on("vibe.received")
 def handle_vibe(event):
@@ -247,7 +248,7 @@ from django.views.decorators.csrf import csrf_exempt
 from zinq_agent import ZinqAgent, ZinqWebhook
 
 agent = ZinqAgent()
-webhook = ZinqWebhook(secret="zws_your_secret")
+webhook = ZinqWebhook(secret="dev", skip_signature_check=True)
 
 @webhook.on("vibe.received")
 def handle_vibe(event):
@@ -275,7 +276,7 @@ For production deployments, use the `create_flask_app()` method with a productio
 from zinq_agent import ZinqAgent, ZinqWebhook
 
 agent = ZinqAgent()
-webhook = ZinqWebhook(secret="zws_your_secret")
+webhook = ZinqWebhook(secret="dev", skip_signature_check=True)
 
 @webhook.on("vibe.received")
 def handle(event):

@@ -682,17 +682,19 @@ Webhook server for receiving real-time events from the Zinq platform.
 from zinq_agent import ZinqWebhook
 
 webhook = ZinqWebhook(
-    secret="zws_your_secret",     # Webhook signing secret
-    skip_signature_check=False,   # Set True for local dev only
+    secret="dev",
+    skip_signature_check=True,    # Signature verification coming soon
 )
 ```
+
+> **Note:** Webhook signing secrets (`zws_...`) are not yet available. Use `skip_signature_check=True` for now. HMAC-SHA256 signature verification will be added in a future release.
 
 ### Parameters
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `secret` | `str` | (required) | Webhook secret with `zws_` prefix, used for HMAC-SHA256 signature verification. |
-| `skip_signature_check` | `bool` | `False` | Skip signature verification. **Only use for local development.** |
+| `secret` | `str` | (required) | Any string value. `zws_` webhook secrets are not yet available — use `skip_signature_check=True`. |
+| `skip_signature_check` | `bool` | `False` | Skip signature verification. Set to `True` (required until webhook secrets are available). |
 
 ### `webhook.on(event_type) -> decorator`
 
@@ -740,7 +742,7 @@ webhook.start(
 Create a Flask app with the webhook endpoint configured. Use this for production deployments with a WSGI server.
 
 ```python
-webhook = ZinqWebhook(secret="zws_xxxxx")
+webhook = ZinqWebhook(secret="dev", skip_signature_check=True)
 
 @webhook.on("vibe.received")
 def handle(event):

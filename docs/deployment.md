@@ -31,7 +31,7 @@ You need a tunnel to make your local machine reachable by Zinq's servers.
 ```bash
 # Terminal 1: Start your agent
 export ZINQ_API_KEY=zak_your_key
-export ZINQ_WEBHOOK_SECRET=zws_your_secret
+# ZINQ_WEBHOOK_SECRET — not yet available, use skip_signature_check=True
 python my_agent.py
 
 # Terminal 2: Start a tunnel
@@ -78,7 +78,7 @@ Create `~/Library/LaunchAgents/com.zinq.my-agent.plist`:
         <key>ZINQ_API_KEY</key>
         <string>zak_your_key</string>
         <key>ZINQ_WEBHOOK_SECRET</key>
-        <string>zws_your_secret</string>
+        <!-- ZINQ_WEBHOOK_SECRET not yet available, use skip_signature_check=True -->
     </dict>
 
     <key>RunAtLoad</key>
@@ -135,7 +135,7 @@ cp /path/to/my_agent.py /opt/zinq-agent/
 ```bash
 sudo tee /opt/zinq-agent/.env << 'EOF'
 ZINQ_API_KEY=zak_your_key
-ZINQ_WEBHOOK_SECRET=zws_your_secret
+# ZINQ_WEBHOOK_SECRET — not yet available
 EOF
 
 sudo chmod 600 /opt/zinq-agent/.env
@@ -223,7 +223,7 @@ docker run -d \
   --name zinq-agent \
   -p 8080:8080 \
   -e ZINQ_API_KEY=zak_your_key \
-  -e ZINQ_WEBHOOK_SECRET=zws_your_secret \
+  -e # ZINQ_WEBHOOK_SECRET — not yet available \
   --restart unless-stopped \
   my-zinq-agent
 
@@ -245,7 +245,7 @@ services:
       - "8080:8080"
     environment:
       - ZINQ_API_KEY=zak_your_key
-      - ZINQ_WEBHOOK_SECRET=zws_your_secret
+      - # ZINQ_WEBHOOK_SECRET — not yet available
     restart: unless-stopped
 ```
 
@@ -436,7 +436,7 @@ primary_region = "ord"
 
 ```bash
 fly launch
-fly secrets set ZINQ_API_KEY=zak_your_key ZINQ_WEBHOOK_SECRET=zws_your_secret
+fly secrets set ZINQ_API_KEY=zak_your_key # ZINQ_WEBHOOK_SECRET — not yet available
 fly deploy
 ```
 
@@ -503,7 +503,7 @@ For production, use gunicorn instead of the built-in Flask development server:
 from zinq_agent import ZinqAgent, ZinqWebhook
 
 agent = ZinqAgent()
-webhook = ZinqWebhook(secret=os.environ["ZINQ_WEBHOOK_SECRET"])
+webhook = ZinqWebhook(secret="dev", skip_signature_check=True  # Signature verification coming soon)
 
 @webhook.on("vibe.received")
 def handle(event):

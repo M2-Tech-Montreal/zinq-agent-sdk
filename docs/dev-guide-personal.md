@@ -109,7 +109,7 @@ Best for interactive agents that respond to user messages immediately.
 from zinq_agent import ZinqAgent, ZinqWebhook
 
 agent = ZinqAgent()
-webhook = ZinqWebhook(secret="zws_your_secret")
+webhook = ZinqWebhook(secret="dev", skip_signature_check=True  # Signature verification coming soon)
 
 @webhook.on("vibe.received")
 def handle(event):

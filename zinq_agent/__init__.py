@@ -25,7 +25,7 @@ For webhook support::
     from zinq_agent import ZinqAgent, ZinqWebhook
 
     agent = ZinqAgent(api_key="zak_xxxxx")
-    webhook = ZinqWebhook(secret="zws_xxxxx")
+    webhook = ZinqWebhook(secret="dev", skip_signature_check=True)
 
     @webhook.on("vibe.received")
     def handle_vibe(event):

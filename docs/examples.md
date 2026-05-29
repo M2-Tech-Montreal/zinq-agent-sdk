@@ -25,7 +25,7 @@ import os
 from zinq_agent import ZinqAgent, ZinqWebhook
 
 agent = ZinqAgent(api_key=os.environ["ZINQ_API_KEY"])
-webhook = ZinqWebhook(secret=os.environ["ZINQ_WEBHOOK_SECRET"])
+webhook = ZinqWebhook(secret="dev", skip_signature_check=True  # Signature verification coming soon)
 
 
 @webhook.on("vibe.received")
@@ -57,7 +57,7 @@ if __name__ == "__main__":
 ```bash
 pip install zinq-agent[webhook]
 export ZINQ_API_KEY=zak_your_key
-export ZINQ_WEBHOOK_SECRET=zws_your_secret
+# ZINQ_WEBHOOK_SECRET — not yet available, use skip_signature_check=True
 python echo_bot.py
 ```
 
@@ -182,7 +182,7 @@ import os
 from zinq_agent import ZinqAgent, ZinqWebhook, InsufficientCreditsError
 
 agent = ZinqAgent(api_key=os.environ["ZINQ_API_KEY"])
-webhook = ZinqWebhook(secret=os.environ["ZINQ_WEBHOOK_SECRET"])
+webhook = ZinqWebhook(secret="dev", skip_signature_check=True  # Signature verification coming soon)
 
 SYSTEM_PROMPT = """You are a friendly fitness coach inside the Zinq app.
 
@@ -415,7 +415,7 @@ from slack_sdk.socket_mode.response import SocketModeResponse
 from zinq_agent import ZinqAgent, ZinqWebhook
 
 agent = ZinqAgent(api_key=os.environ["ZINQ_API_KEY"])
-webhook = ZinqWebhook(secret=os.environ["ZINQ_WEBHOOK_SECRET"])
+webhook = ZinqWebhook(secret="dev", skip_signature_check=True  # Signature verification coming soon)
 
 slack_bot = WebClient(token=os.environ["SLACK_BOT_TOKEN"])
 slack_socket = SocketModeClient(
@@ -508,7 +508,7 @@ if __name__ == "__main__":
 ```bash
 pip install zinq-agent[webhook] slack-sdk
 export ZINQ_API_KEY=zak_your_key
-export ZINQ_WEBHOOK_SECRET=zws_your_secret
+# ZINQ_WEBHOOK_SECRET — not yet available, use skip_signature_check=True
 export SLACK_BOT_TOKEN=xoxb-...
 export SLACK_APP_TOKEN=xapp-...
 export SLACK_CHANNEL_ID=C0123456789
@@ -627,7 +627,7 @@ import os
 from zinq_agent import ZinqAgent, ZinqWebhook, InsufficientCreditsError
 
 agent = ZinqAgent(api_key=os.environ["ZINQ_API_KEY"])
-webhook = ZinqWebhook(secret=os.environ["ZINQ_WEBHOOK_SECRET"])
+webhook = ZinqWebhook(secret="dev", skip_signature_check=True  # Signature verification coming soon)
 
 SYSTEM_PROMPT = """You are a personal shopping assistant in the Zinq app.
 Keep responses under 200 words. Suggest 2-3 options when recommending.

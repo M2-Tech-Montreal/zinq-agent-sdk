@@ -13,7 +13,7 @@ Setup:
     pip install zinq-agent[webhook]
 
     export ZINQ_API_KEY="zak_your_key_here"
-    export ZINQ_WEBHOOK_SECRET="zws_your_secret_here"
+    # ZINQ_WEBHOOK_SECRET — not yet available, use skip_signature_check=True
 
     python personal_shopper.py
 """

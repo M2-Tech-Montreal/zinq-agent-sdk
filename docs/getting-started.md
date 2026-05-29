@@ -125,7 +125,7 @@ The example above is a one-shot script. To build an agent that responds to the u
 from zinq_agent import ZinqAgent, ZinqWebhook
 
 agent = ZinqAgent()
-webhook = ZinqWebhook(secret="zws_your_webhook_secret")
+webhook = ZinqWebhook(secret="dev", skip_signature_check=True)
 
 @webhook.on("vibe.received")
 def handle_vibe(event):

@@ -216,7 +216,7 @@ print(f"Credits used: {response.usage.credits_used}")
 from zinq_agent import ZinqAgent, ZinqWebhook
 
 agent = ZinqAgent()
-webhook = ZinqWebhook(secret="zws_your_secret_here")
+webhook = ZinqWebhook(secret="dev", skip_signature_check=True  # Signature verification coming soon)
 
 @webhook.on("vibe.received")
 def handle_vibe(event):
@@ -299,7 +299,7 @@ admin.agent.deploy(refined["yaml"])
 ```python
 from zinq_agent.webhook import ZinqBusinessWebhook
 
-webhook = ZinqBusinessWebhook(secret="zws_xxx", admin=admin)
+webhook = ZinqBusinessWebhook(secret="dev", skip_signature_check=True, admin=admin)
 
 @webhook.action("request_pickup")
 def handle_order(params, session_id):
@@ -366,7 +366,7 @@ The SDK reads these automatically so you don't have to pass them in code:
 
 ```bash
 export ZINQ_API_KEY=zak_your_key_here        # Required for ZinqAgent
-export ZINQ_WEBHOOK_SECRET=zws_your_secret   # Only for webhooks
+# ZINQ_WEBHOOK_SECRET — not yet available, use skip_signature_check=True
 export ZINQ_BIZ_KEY=zbk_your_key_here        # Only for ZinqMarketplaceAdmin
 ```
 
@@ -375,7 +375,7 @@ export ZINQ_BIZ_KEY=zbk_your_key_here        # Only for ZinqMarketplaceAdmin
 agent = ZinqAgent()
 
 # Webhook secret must be passed explicitly
-webhook = ZinqWebhook(secret="zws_your_secret_here")
+webhook = ZinqWebhook(secret="dev", skip_signature_check=True  # Signature verification coming soon)
 ```
 
 ## Async Support

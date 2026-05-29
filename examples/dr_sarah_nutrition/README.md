@@ -38,7 +38,7 @@ pip install zinq-agent[webhook]
 
 ```bash
 export ZINQ_BIZ_KEY="zbk_your_key_here"
-export ZINQ_WEBHOOK_SECRET="zws_your_secret_here"
+# ZINQ_WEBHOOK_SECRET — not yet available, use skip_signature_check=True
 ```
 
 3. Deploy the agent definition:

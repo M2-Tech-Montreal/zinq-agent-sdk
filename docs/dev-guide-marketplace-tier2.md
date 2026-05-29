@@ -220,7 +220,7 @@ if __name__ == "__main__":
 
 ```bash
 export ZINQ_BIZ_KEY=zbk_your_key
-export ZINQ_WEBHOOK_SECRET=zws_your_secret
+# ZINQ_WEBHOOK_SECRET — not yet available, use skip_signature_check=True
 
 # Start the server
 python server.py
@@ -316,7 +316,7 @@ docker build -t joes-barber-agent .
 docker run -d \
   -p 8080:8080 \
   -e ZINQ_BIZ_KEY=zbk_your_key \
-  -e ZINQ_WEBHOOK_SECRET=zws_your_secret \
+  -e # ZINQ_WEBHOOK_SECRET — not yet available \
   --restart unless-stopped \
   joes-barber-agent
 ```

@@ -39,7 +39,7 @@ class ZinqWebhook:
 
         from zinq_agent import ZinqWebhook
 
-        webhook = ZinqWebhook(secret="zws_xxxxx")
+        webhook = ZinqWebhook(secret="dev", skip_signature_check=True)
 
         @webhook.on("vibe.received")
         def handle_vibe(event):
@@ -247,7 +247,7 @@ class ZinqWebhook:
 
         Use this for production deployments with a WSGI server::
 
-            webhook = ZinqWebhook(secret="zws_xxxxx")
+            webhook = ZinqWebhook(secret="dev", skip_signature_check=True)
             app = webhook.create_flask_app()
             # Run with: gunicorn app:app
 
@@ -304,7 +304,7 @@ class ZinqBusinessWebhook(ZinqWebhook):
         from zinq_agent.webhook import ZinqBusinessWebhook
 
         admin = ZinqMarketplaceAdmin()
-        webhook = ZinqBusinessWebhook(secret="zws_xxxxx", admin=admin)
+        webhook = ZinqBusinessWebhook(secret="dev", skip_signature_check=True, admin=admin)
 
         @webhook.action("check_availability")
         def check_availability(params, session_id):

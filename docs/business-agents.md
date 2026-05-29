@@ -216,7 +216,7 @@ if __name__ == "__main__":
 
 ```bash
 export ZINQ_BIZ_KEY="zbk_your_key_here"
-export ZINQ_WEBHOOK_SECRET="zws_your_secret_here"
+# ZINQ_WEBHOOK_SECRET — not yet available, use skip_signature_check=True
 
 python server.py
 ```
@@ -230,7 +230,7 @@ python server.py
 ```python
 from zinq_agent.webhook import ZinqBusinessWebhook
 
-webhook = ZinqBusinessWebhook(secret="zws_xxx", admin=admin)
+webhook = ZinqBusinessWebhook(secret="dev", skip_signature_check=True, admin=admin)
 
 @webhook.action("check_availability")
 def check_availability(params, session_id):

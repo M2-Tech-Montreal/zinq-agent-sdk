@@ -247,7 +247,7 @@ else:
 webhook = ZinqWebhook(secret="dev", skip_signature_check=True)
 
 # Production
-webhook = ZinqWebhook(secret=os.environ["ZINQ_WEBHOOK_SECRET"])
+webhook = ZinqWebhook(secret="dev", skip_signature_check=True  # Signature verification coming soon)
 ```
 
 ### Test with curl
@@ -311,7 +311,7 @@ from zinq_agent import ZinqAgent, ZinqWebhook, InsufficientCreditsError
 
 # --- Config ---
 agent = ZinqAgent(api_key=os.environ["ZINQ_API_KEY"])
-webhook = ZinqWebhook(secret=os.environ["ZINQ_WEBHOOK_SECRET"])
+webhook = ZinqWebhook(secret="dev", skip_signature_check=True  # Signature verification coming soon)
 
 # --- Helpers ---
 
