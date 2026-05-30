@@ -885,6 +885,7 @@ class UserClient:
         nickname: str | None = None,
         bio: str | None = None,
         avatar_url: str | None = None,
+        system_prompt: str | None = None,
     ) -> dict:
         """Update the agent's own profile. Only provided fields are changed.
 
@@ -893,6 +894,8 @@ class UserClient:
             nickname: Short name.
             bio: One-line description (max 200 chars).
             avatar_url: Profile image URL.
+            system_prompt: Gemini system prompt. Controls how the agent
+                behaves when users message it.
 
         Returns:
             Updated agent profile dict.
@@ -906,6 +909,8 @@ class UserClient:
             body["bio"] = bio
         if avatar_url is not None:
             body["avatarUrl"] = avatar_url
+        if system_prompt is not None:
+            body["systemPrompt"] = system_prompt
 
         response = self._client.put("/profile", json=body)
         if response.status_code != 200:
