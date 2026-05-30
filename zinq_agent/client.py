@@ -681,6 +681,83 @@ class ZonesClient:
         return response.json()
 
 
+class ToolsClient:
+    """Register and manage tools for this agent.
+
+    Tools let Gemini call your webhook endpoints to perform actions.
+
+    Usage::
+
+        # Register a tool
+        agent.tools.register(
+            name="get_weather",
+            description="Get current weather for a city",
+            webhook_url="https://my-server.com/tools/weather",
+            parameters='{"type":"object","properties":{"city":{"type":"string"}}}'
+        )
+
+        # List tools
+        for tool in agent.tools.list():
+            print(tool["name"])
+
+        # Remove a tool
+        agent.tools.remove(tool_id=123)
+    """
+
+    def __init__(self, http_client):
+        self._client = http_client
+
+    def list(self) -> list[dict]:
+        """List all registered tools.
+
+        Returns:
+            List of tool dicts with id, name, description, webhookUrl, parameters.
+        """
+        response = self._client.get("/tools")
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return response.json().get("tools", [])
+
+    def register(self, *, name: str, description: str, webhook_url: str,
+                 parameters: str | None = None) -> dict:
+        """Register a tool that Gemini can call.
+
+        When a user messages this agent, Gemini will see the tool declaration
+        and can call it. The backend will POST to your webhook_url with the
+        arguments Gemini extracted.
+
+        Args:
+            name: Tool name (e.g. "get_weather", "check_inventory").
+            description: What the tool does. Gemini uses this to decide when to call it.
+            webhook_url: HTTPS URL that receives tool call POSTs.
+            parameters: JSON schema string for tool parameters (optional).
+
+        Returns:
+            Dict with id and name of the created tool.
+        """
+        body = {
+            "name": name,
+            "description": description,
+            "webhookUrl": webhook_url,
+        }
+        if parameters is not None:
+            body["parameters"] = parameters
+        response = self._client.post("/tools", json=body)
+        if response.status_code not in (200, 201):
+            _raise_for_status(response)
+        return response.json()
+
+    def remove(self, tool_id: int) -> None:
+        """Remove a registered tool.
+
+        Args:
+            tool_id: The tool ID to remove.
+        """
+        response = self._client.delete(f"/tools/{tool_id}")
+        if response.status_code not in (200, 204):
+            _raise_for_status(response)
+
+
 class FeedClient:
     """Client for reading the user's vibe feed.
 
@@ -1164,6 +1241,7 @@ class ZinqAgent:
         self.billing = BillingClient(self._client)
         self.user = UserClient(self._client)
         self.gemini = GeminiClient(self._client)
+        self.tools = ToolsClient(self._client)
 
     def close(self) -> None:
         """Close the underlying HTTP client. Call when done using the agent."""
