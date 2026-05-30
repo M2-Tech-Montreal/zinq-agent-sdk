@@ -731,6 +731,41 @@ Your server should return a JSON response with the result:
 
 Gemini receives this result and summarizes it for the user.
 
+### Reserved tool name: `wave`
+
+If you register a tool named `wave`, it gets called automatically when a user **opens the chat** (wave). This is the agent's first impression — show current state.
+
+**No Gemini involved for waves.** The backend calls your `status` endpoint directly and sends the response as a vibe.
+
+```python
+agent.tools.register(
+    name="wave",
+    description="Current agent status summary",
+    webhook_url="https://my-server.com/tools/status",
+)
+```
+
+Your server receives:
+
+```json
+{
+  "userId": 1147,
+  "event": "wave"
+}
+```
+
+Return a `message` field with the greeting:
+
+```json
+{
+  "message": "Kaspr running. +1 ESM6 overnight, entered 5450.25. Next flatten: Mon 09:29 ET."
+}
+```
+
+This becomes the wave response. If you don't register a `wave` tool, the agent sends a generic "Hi! How can I help?"
+
+**Important:** The `wave` tool is for waves only. It is NOT called by Gemini during regular conversations. Register your other tools separately for Gemini to use during chat.
+
 ---
 
 ## ZinqWebhook

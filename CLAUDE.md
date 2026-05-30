@@ -276,7 +276,15 @@ agent.vibes.send(text=response.text)
 ```python
 agent = ZinqAgent()
 
-# Register tools — Gemini will call these when users ask questions
+# Register a "wave" tool — called automatically when a user opens the chat (wave).
+# This is the agent's first impression. Return a summary of current state.
+agent.tools.register(
+    name="wave",
+    description="Current agent status summary shown when user opens chat",
+    webhook_url="https://my-server.com/tools/status",
+)
+
+# Register other tools — Gemini calls these when users ask questions
 agent.tools.register(
     name="get_positions",
     description="Get current open trading positions",
@@ -289,7 +297,7 @@ agent.tools.register(
     parameters='{"type":"object","properties":{"symbol":{"type":"string"},"side":{"type":"string","enum":["buy","sell"]},"quantity":{"type":"integer"}},"required":["symbol","side","quantity"]}',
 )
 
-# That's it — when a user messages this agent, Zinq's Gemini sees the tools,
+# When a user messages this agent, Zinq's Gemini sees the tools,
 # decides when to call them, and POSTs to your webhook URLs.
 # Your server returns the result, Gemini summarizes it for the user.
 ```

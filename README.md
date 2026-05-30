@@ -214,19 +214,23 @@ print(f"Credits used: {response.usage.credits_used}")
 ### Register tools (Gemini calls your endpoints)
 
 ```python
-# Register a tool — Gemini will call your webhook when users ask relevant questions
+# "wave" tool — called automatically when user opens the chat (wave)
+# Return a summary of current state as the agent's greeting
+agent.tools.register(
+    name="wave",
+    description="Current agent status summary",
+    webhook_url="https://your-server.com/tools/status",
+)
+
+# Other tools — Gemini calls these during conversation
 agent.tools.register(
     name="check_weather",
     description="Get current weather for a city",
     webhook_url="https://your-server.com/tools/weather",
 )
-
-# List registered tools
-tools = agent.tools.list()
-
-# Remove a tool
-agent.tools.remove(tool_id=tools[0]["id"])
 ```
+
+The `wave` tool is special: it's called directly on wave (no Gemini). All other tools are called by Gemini during chat.
 
 See the [API Reference — Tools](docs/api-reference.md#agenttools--toolsclient) for full details.
 
