@@ -1251,6 +1251,7 @@ class ZinqAgent:
         self.user = UserClient(self._client)
         self.gemini = GeminiClient(self._client)
         self.tools = ToolsClient(self._client)
+        self.visibility = VisibilityClient(self._client)
 
     def close(self) -> None:
         """Close the underlying HTTP client. Call when done using the agent."""
@@ -1342,3 +1343,29 @@ class AsyncZinqAgent:
     def __repr__(self) -> str:
         masked_key = f"{self.api_key[:8]}...{self.api_key[-4:]}"
         return f"AsyncZinqAgent(api_key='{masked_key}', base_url='{self.base_url}')"
+
+
+class VisibilityClient:
+    """Manage agent visibility.
+
+    Usage::
+
+        agent.visibility.set("public")           # everyone
+        agent.visibility.set("private")           # owner only
+        agent.visibility.set([1147, 1234, 5678])  # specific users
+    """
+
+    def __init__(self, http_client):
+        self._client = http_client
+
+    def set(self, visibility):
+        """Set agent visibility.
+
+        Args:
+            visibility: ``"public"``, ``"private"``, or a list of user IDs.
+        """
+        response = self._client.put("/visibility", json={"visibility": visibility})
+        if response.status_code != 200:
+            from .utils import raise_for_status as _raise
+            _raise(response)
+        return response.json()
