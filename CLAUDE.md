@@ -79,7 +79,7 @@ For persistent running, use systemd — see `docs/deployment.md`.
 zinq_agent/
 ├── client.py        # ZinqAgent + AsyncZinqAgent main classes
 │                     # Sub-clients: diary, vibes, feed, contacts, zones,
-│                     #              memories, billing, user, gemini
+│                     #              memories, billing, user, gemini, tools
 ├── gemini.py        # GeminiClient (chat, embed) — streaming NOT supported
 ├── marketplace.py   # ZinqMarketplaceAdmin for business agents
 ├── webhook.py       # ZinqWebhook for receiving events
@@ -100,6 +100,7 @@ zinq_agent/
 | `agent.user` | `.context()`, `.profile()`, `.update_profile()` | User info + agent's own profile |
 | `agent.gemini` | `.chat()`, `.embed()` | Gemini LLM (no streaming) |
 | `agent.billing` | `.credits()`, `.usage()` | Credit status |
+| `agent.tools` | `.register()`, `.list()`, `.remove()` | Register tools that Gemini can call |
 
 ## API base URL
 
@@ -269,4 +270,26 @@ response = agent.gemini.chat(
     model="flash",
 )
 agent.vibes.send(text=response.text)
+```
+
+### Agent with tools (Gemini calls your endpoints)
+```python
+agent = ZinqAgent()
+
+# Register tools — Gemini will call these when users ask questions
+agent.tools.register(
+    name="get_positions",
+    description="Get current open trading positions",
+    webhook_url="https://my-server.com/tools/positions",
+)
+agent.tools.register(
+    name="place_order",
+    description="Place a buy or sell order",
+    webhook_url="https://my-server.com/tools/order",
+    parameters='{"type":"object","properties":{"symbol":{"type":"string"},"side":{"type":"string","enum":["buy","sell"]},"quantity":{"type":"integer"}},"required":["symbol","side","quantity"]}',
+)
+
+# That's it — when a user messages this agent, Zinq's Gemini sees the tools,
+# decides when to call them, and POSTs to your webhook URLs.
+# Your server returns the result, Gemini summarizes it for the user.
 ```

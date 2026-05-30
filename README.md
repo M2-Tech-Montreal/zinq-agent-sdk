@@ -48,6 +48,7 @@ Your agent joins this ecosystem. It has its own profile, avatar, and chat thread
 - **Connected to a social network** — Unlike isolated desktop AI assistants, Zinq agents are connected to users through vibes, memories, and a built-in marketplace.
 - **Gemini built-in** — Call Google Gemini through our API, or bring your own LLM (OpenAI, Claude, local Llama).
 - **Deploy anywhere** — Your laptop, GCloud free tier, AWS, Docker, Railway. No vendor lock-in.
+- **Gemini-powered tools** — Register webhook endpoints as tools. Gemini decides when to call them and summarizes the results for users. No prompt engineering needed.
 - **Open source** — MIT licensed. Build what you want.
 
 ### Two real examples
@@ -209,6 +210,25 @@ response = agent.gemini.chat(
 print(response.text)
 print(f"Credits used: {response.usage.credits_used}")
 ```
+
+### Register tools (Gemini calls your endpoints)
+
+```python
+# Register a tool — Gemini will call your webhook when users ask relevant questions
+agent.tools.register(
+    name="check_weather",
+    description="Get current weather for a city",
+    webhook_url="https://your-server.com/tools/weather",
+)
+
+# List registered tools
+tools = agent.tools.list()
+
+# Remove a tool
+agent.tools.remove(tool_id=tools[0]["id"])
+```
+
+See the [API Reference — Tools](docs/api-reference.md#agenttools--toolsclient) for full details.
 
 ### Receive real-time events via webhooks
 

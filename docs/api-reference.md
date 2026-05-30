@@ -14,6 +14,7 @@ Complete reference for every class, method, and model in the Zinq Agent Python S
 - [agent.memories](#agentmemories) — persistent key-value storage
 - [agent.user](#agentuser) — user profile and preferences
 - [agent.gemini](#agentgemini) — LLM chat and embeddings
+- [agent.tools](#agenttools--toolsclient) — register tools that Gemini can call
 - [ZinqWebhook](#zinqwebhook) — receive events from Zinq
 - [Models](#models)
 - [Exceptions](#exceptions)
@@ -671,6 +672,64 @@ print(f"Credits used: {result.credits_used}")    # 1
 | `task_type` | `str` | `"RETRIEVAL_QUERY"` | `"RETRIEVAL_QUERY"` for search queries, `"RETRIEVAL_DOCUMENT"` for documents to search over. |
 
 **Returns:** [`EmbeddingResponse`](#embeddingresponse)
+
+---
+
+## `agent.tools` — ToolsClient
+
+Register tools that Zinq's Gemini can call on behalf of users. When a user messages your agent, Gemini sees the registered tools and calls them when appropriate. The backend POSTs to your webhook URL with the extracted arguments.
+
+### `agent.tools.register(*, name, description, webhook_url, parameters=None)`
+
+Register a tool.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | `str` | Yes | Tool name (e.g. `"get_weather"`) |
+| `description` | `str` | Yes | What the tool does. Gemini uses this to decide when to call it. |
+| `webhook_url` | `str` | Yes | HTTPS URL that receives tool call POSTs. |
+| `parameters` | `str` | No | JSON schema string for parameters. |
+
+Returns: `dict` with `id` and `name`.
+
+### `agent.tools.list()`
+
+List all registered tools.
+
+Returns: `list[dict]` with `id`, `name`, `description`, `webhookUrl`, `parameters`.
+
+### `agent.tools.remove(tool_id)`
+
+Remove a registered tool.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `tool_id` | `int` | Yes | Tool ID from `register()` or `list()`. |
+
+### Tool webhook payload
+
+When Gemini calls your tool, your webhook receives a POST:
+
+```json
+{
+  "userId": 1147,
+  "symbol": "AAPL",
+  "side": "buy",
+  "quantity": 10
+}
+```
+
+Your server should return a JSON response with the result:
+
+```json
+{
+  "status": "filled",
+  "price": 195.50,
+  "orderId": "ORD-1234"
+}
+```
+
+Gemini receives this result and summarizes it for the user.
 
 ---
 
