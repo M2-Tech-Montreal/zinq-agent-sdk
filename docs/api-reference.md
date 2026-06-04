@@ -679,7 +679,7 @@ print(f"Credits used: {result.credits_used}")    # 1
 
 Register tools that Zinq's Gemini can call on behalf of users. When a user messages your agent, Gemini sees the registered tools and calls them when appropriate. The backend POSTs to your webhook URL with the extracted arguments.
 
-### `agent.tools.register(*, name, description, webhook_url, parameters=None)`
+### `agent.tools.register(*, name, description, webhook_url, parameters=None, instruction=None)`
 
 Register a tool.
 
@@ -689,6 +689,18 @@ Register a tool.
 | `description` | `str` | Yes | What the tool does. Gemini uses this to decide when to call it. |
 | `webhook_url` | `str` | Yes | HTTPS URL that receives tool call POSTs. |
 | `parameters` | `str` | No | JSON schema string for parameters. |
+| `instruction` | `str` | No | Instruction for how Gemini should present the tool's response. Max 500 chars. Appended to the tool description that Gemini sees. |
+
+The `instruction` parameter controls how Gemini handles tool results. By default, Gemini summarizes tool responses in natural language. If your tool returns pre-formatted content (e.g. markdown tables), use `instruction` to tell Gemini to preserve it:
+
+```python
+agent.tools.register(
+    name="recent_fills",
+    description="Get recent trade fills",
+    webhook_url="https://my-server.com/tools/recent_fills",
+    instruction="Always reproduce the message field verbatim in your response, preserving all markdown formatting including tables",
+)
+```
 
 Returns: `dict` with `id` and `name`.
 
@@ -696,9 +708,23 @@ Returns: `dict` with `id` and `name`.
 
 List all registered tools.
 
-Returns: `list[dict]` with `id`, `name`, `description`, `webhookUrl`, `parameters`.
+Returns: `list[dict]` with `id`, `name`, `description`, `webhookUrl`, `parameters`, and optional `instruction`.
 
-### `agent.tools.remove(tool_id)`
+### `agent.tools.update(tool_id, *, description=None, webhook_url=None, parameters=None, instruction=None)`
+
+Update an existing tool. Only provided fields are changed.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `tool_id` | `int` | Yes | Tool ID from `register()` or `list()`. |
+| `description` | `str` | No | New description. |
+| `webhook_url` | `str` | No | New webhook URL. |
+| `parameters` | `str` | No | New parameter schema JSON. |
+| `instruction` | `str` | No | New instruction. Pass empty string to clear. |
+
+Returns: `dict` with `id` and `name`.
+
+### `agent.tools.delete(tool_id)`
 
 Remove a registered tool.
 
@@ -729,7 +755,7 @@ Your server should return a JSON response with the result:
 }
 ```
 
-Gemini receives this result and summarizes it for the user.
+Gemini receives this result and summarizes it for the user. To control how Gemini presents the result (e.g. preserve markdown tables), use the `instruction` parameter when registering the tool.
 
 ### Reserved tool name: `wave`
 
