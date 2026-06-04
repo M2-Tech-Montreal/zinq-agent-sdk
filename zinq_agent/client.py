@@ -1258,6 +1258,43 @@ class ToolsClient:
             _raise_for_status(response)
         return response.json()
 
+    def update(
+        self,
+        tool_id: int,
+        *,
+        description: str | None = None,
+        webhook_url: str | None = None,
+        parameters: str | None = None,
+        instruction: str | None = None,
+    ) -> dict:
+        """Update an existing tool. Only provided fields are changed.
+
+        Args:
+            tool_id: The tool ID to update.
+            description: New description (shown to Gemini).
+            webhook_url: New webhook URL.
+            parameters: New parameter schema JSON string.
+            instruction: New instruction for Gemini response handling.
+                Pass empty string to clear.
+
+        Returns:
+            Dict with ``id`` and ``name`` of the updated tool.
+        """
+        body: dict[str, str] = {}
+        if description is not None:
+            body["description"] = description
+        if webhook_url is not None:
+            body["webhookUrl"] = webhook_url
+        if parameters is not None:
+            body["parameters"] = parameters
+        if instruction is not None:
+            body["instruction"] = instruction
+
+        response = self._client.put(f"/tools/{tool_id}", json=body)
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return response.json()
+
     def delete(self, tool_id: int) -> None:
         """Remove a registered tool.
 
@@ -1340,7 +1377,6 @@ class ZinqAgent:
         self.user = UserClient(self._client)
         self.tools = ToolsClient(self._client)
         self.gemini = GeminiClient(self._client)
-        self.tools = ToolsClient(self._client)
         self.visibility = VisibilityClient(self._client)
 
     def close(self) -> None:
