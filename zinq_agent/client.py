@@ -1180,6 +1180,132 @@ class AsyncUserClient:
         return response.json()
 
 
+class ToolsClient:
+    """Client for managing this agent's registered tools.
+
+    Tools define external webhooks that Gemini can call during conversations.
+    Use ``instruction`` to control how Gemini presents tool results to the user.
+
+    Usage::
+
+        # Register a tool with rendering instruction
+        agent.tools.register(
+            name="recent_fills",
+            description="Get recent trade fills",
+            webhook_url="https://my-api.com/tools/recent_fills",
+            instruction="Reproduce the message field verbatim, preserving all markdown tables",
+        )
+
+        # List registered tools
+        for tool in agent.tools.list():
+            print(tool["name"], tool.get("instruction"))
+
+        # Remove a tool
+        agent.tools.delete(tool_id=42)
+    """
+
+    def __init__(self, http_client: httpx.Client) -> None:
+        self._client = http_client
+
+    def list(self) -> list[dict]:
+        """List this agent's registered tools.
+
+        Returns:
+            List of tool dicts with id, name, description, webhookUrl,
+            parameters, and optional instruction.
+        """
+        response = self._client.get("/tools")
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return response.json().get("tools", [])
+
+    def register(
+        self,
+        name: str,
+        description: str,
+        webhook_url: str,
+        *,
+        parameters: str | None = None,
+        instruction: str | None = None,
+    ) -> dict:
+        """Register a new tool for this agent.
+
+        Args:
+            name: Tool name (used by Gemini to call it).
+            description: What the tool does (shown to Gemini).
+            webhook_url: URL that receives POST with tool arguments.
+            parameters: Optional JSON string defining the parameter schema.
+            instruction: Optional instruction appended to the tool description
+                that tells Gemini how to handle the tool's response.
+                Example: ``"Reproduce the message field verbatim,
+                preserving all markdown formatting including tables"``
+
+        Returns:
+            Dict with ``id`` and ``name`` of the created tool.
+        """
+        body: dict[str, str] = {
+            "name": name,
+            "description": description,
+            "webhookUrl": webhook_url,
+        }
+        if parameters is not None:
+            body["parameters"] = parameters
+        if instruction is not None:
+            body["instruction"] = instruction
+
+        response = self._client.post("/tools", json=body)
+        if response.status_code not in (200, 201):
+            _raise_for_status(response)
+        return response.json()
+
+    def update(
+        self,
+        tool_id: int,
+        *,
+        description: str | None = None,
+        webhook_url: str | None = None,
+        parameters: str | None = None,
+        instruction: str | None = None,
+    ) -> dict:
+        """Update an existing tool. Only provided fields are changed.
+
+        Args:
+            tool_id: The tool ID to update.
+            description: New description (shown to Gemini).
+            webhook_url: New webhook URL.
+            parameters: New parameter schema JSON string.
+            instruction: New instruction for Gemini response handling.
+                Pass empty string to clear.
+
+        Returns:
+            Dict with ``id`` and ``name`` of the updated tool.
+        """
+        body: dict[str, str] = {}
+        if description is not None:
+            body["description"] = description
+        if webhook_url is not None:
+            body["webhookUrl"] = webhook_url
+        if parameters is not None:
+            body["parameters"] = parameters
+        if instruction is not None:
+            body["instruction"] = instruction
+
+        response = self._client.put(f"/tools/{tool_id}", json=body)
+        if response.status_code != 200:
+            _raise_for_status(response)
+        return response.json()
+
+    def delete(self, tool_id: int) -> None:
+        """Remove a registered tool.
+
+        Args:
+            tool_id: The tool ID to delete.
+        """
+        response = self._client.delete(f"/tools/{tool_id}")
+        if response.status_code not in (200, 204):
+            _raise_for_status(response)
+
+
 # ===========================================================================
 # Main client classes
 # ===========================================================================
@@ -1249,8 +1375,8 @@ class ZinqAgent:
         self.memories = MemoryClient(self._client)
         self.billing = BillingClient(self._client)
         self.user = UserClient(self._client)
-        self.gemini = GeminiClient(self._client)
         self.tools = ToolsClient(self._client)
+        self.gemini = GeminiClient(self._client)
         self.visibility = VisibilityClient(self._client)
 
     def close(self) -> None:
